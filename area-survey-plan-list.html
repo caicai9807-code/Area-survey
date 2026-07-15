@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>面积普查任务管理</title>
+  <style>
+    :root {
+      --primary: #4c78f5;
+      --primary-hover: #3a65d9;
+      --primary-soft: #f0f5ff;
+      --primary-border: #d6e4ff;
+      --text: #2c3e50;
+      --text-secondary: #5a6577;
+      --text-tertiary: #8c95a6;
+      --border: #e8ecf1;
+      --divider: #f0f2f5;
+      --surface: #fff;
+      --page-bg: #f3f6fa;
+      --header-height: 56px;
+      --sider-width: 220px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      background: var(--page-bg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+        "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
+      font-size: 14px;
+    }
+
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+
+    .app { min-height: 100vh; }
+
+    .sider {
+      position: fixed;
+      inset: 0 auto 0 0;
+      width: var(--sider-width);
+      background: var(--sider);
+      color: rgba(255,255,255,.86);
+      top: var(--header-height);
+      bottom: 0;
+      left: 0;
+      width: var(--sider-width);
+      background: #fff;
+      color: var(--text-secondary);
+      border-right: 1px solid var(--border);
+      z-index: 20;
+    }
+
+    .brand {
+      height: var(--header-height);
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 0 22px;
+      color: white;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      color: var(--primary);
+      background: #fff;
+      font-size: 15px;
+    }
+
+    .menu { padding: 12px 8px; }
+    .menu-group-title, .menu-item {
+      position: relative;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      border-radius: 4px;
+      user-select: none;
+    }
+
+    .menu-group-title {
+      padding: 0 14px;
+      gap: 11px;
+      cursor: pointer;
+    }
+
+    .menu-group-title:hover, .menu-item:hover { color: var(--primary); background: #f8faff; }
+    .menu-icon { width: 20px; text-align: center; font-size: 17px; }
+    .menu-arrow { margin-left: auto; transition: transform .2s; }
+    .menu-group.collapsed .menu-arrow { transform: rotate(-90deg); }
+    .menu-group.collapsed .menu-children { display: none; }
+
+    .menu-item {
+      margin: 3px 0;
+      padding: 0 14px 0 46px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .menu-item.selected {
+      color: var(--primary);
+      background: var(--primary-soft);
+      font-weight: 500;
+    }
+
+    .menu-item.selected::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 7px;
+      bottom: 7px;
+      width: 3px;
+      border-radius: 0 2px 2px 0;
+      background: var(--primary);
+    }
+
+    .menu-badge {
+      min-width: 18px;
+      height: 18px;
+      margin-left: auto;
+      padding: 0 5px;
+      color: #fff;
+      background: #ff4d4f;
+      border-radius: 9px;
+      font-size: 11px;
+      line-height: 18px;
+      text-align: center;
+    }
+
+    .menu-note {
+      margin-left: auto;
+      color: var(--text-tertiary);
+      font-size: 12px;
+    }
+
+    .topbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--header-height);
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      color: #fff;
+      background: linear-gradient(90deg, #4c78f5 0%, #4e7cf0 100%);
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    }
+
+    .topbar-left, .topbar-right, .topbar-control, .user { display: flex; align-items: center; }
+    .topbar-left { gap: 10px; }
+    .topbar-right { gap: 8px; }
+    .system-name { color: #fff; font-size: 16px; font-weight: 700; }
+    .topbar-control {
+      height: 32px;
+      gap: 6px;
+      padding: 0 10px;
+      color: rgba(255,255,255,.92);
+      border: 1px solid rgba(255,255,255,.24);
+      border-radius: 6px;
+      background: rgba(255,255,255,.08);
+      font-size: 13px;
+    }
+    .env-badge {
+      height: 24px;
+      padding: 0 8px;
+      color: #ad6800;
+      background: #fff7e6;
+      border: 1px solid #ffd591;
+      border-radius: 4px;
+      line-height: 22px;
+      font-size: 12px;
+    }
+    .user { gap: 8px; margin-left: 4px; color: #fff; }
+    .avatar {
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      color: white;
+      border-radius: 50%;
+      color: var(--primary);
+      background: #fff;
+      font-size: 13px;
+    }
+
+    main {
+      margin-left: var(--sider-width);
+      padding: calc(var(--header-height) + 20px) 24px 24px;
+      min-width: 980px;
+    }
+
+    .breadcrumb { margin: 0 0 12px; color: var(--text-tertiary); font-size: 13px; }
+    .breadcrumb b { color: var(--text-secondary); font-weight: 400; }
+
+    .page-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    h1 { margin: 0; font-size: 18px; font-weight: 600; }
+    .subtitle { margin-top: 5px; color: var(--text-tertiary); font-size: 12px; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.04);
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: minmax(290px, 1fr) minmax(250px, .8fr) minmax(250px, .8fr) auto;
+      gap: 20px;
+      align-items: center;
+      padding: 16px 20px;
+      margin-bottom: 16px;
+    }
+
+    .field { display: grid; grid-template-columns: max-content 1fr; align-items: center; gap: 10px; }
+    .field label { color: var(--text-secondary); font-size: 13px; white-space: nowrap; }
+    .control {
+      width: 100%;
+      height: 32px;
+      padding: 0 11px;
+      color: var(--text);
+      background: white;
+      border: 1px solid #d9dee7;
+      border-radius: 6px;
+      outline: 0;
+      transition: border-color .2s, box-shadow .2s;
+    }
+
+    .control::placeholder { color: #b8bfc9; }
+    .control:hover { border-color: var(--primary); }
+    .control:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(76,120,245,.10); }
+
+    .filter-actions { display: flex; gap: 10px; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 32px;
+      padding: 0 15px;
+      border: 1px solid #d9dee7;
+      border-radius: 6px;
+      color: var(--text-secondary);
+      background: white;
+      transition: all .2s;
+      text-decoration: none;
+    }
+
+    .btn:hover { color: var(--primary); border-color: var(--primary-hover); }
+    .btn-primary { color: white; border-color: var(--primary); background: var(--primary); }
+    .btn-primary:hover { color: white; border-color: var(--primary-hover); background: var(--primary-hover); }
+    .btn:disabled { opacity: .48; cursor: not-allowed; }
+    .btn:disabled:hover { color: var(--text-secondary); border-color: #d9dee7; }
+    .btn-icon { margin-right: 6px; }
+
+    .list-card { padding: 0 20px 14px; }
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      min-height: 54px;
+      border-bottom: 1px solid var(--divider);
+    }
+
+    .toolbar-title { font-size: 15px; font-weight: 600; }
+    .toolbar-count { margin-left: 8px; color: var(--text-tertiary); font-size: 12px; font-weight: 400; }
+    .table-wrap { width: 100%; margin-top: 14px; overflow-x: auto; border: 1px solid var(--border); border-radius: 4px; }
+    table { width: 100%; min-width: 1260px; border-collapse: collapse; table-layout: fixed; }
+    th, td {
+      height: 46px;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      vertical-align: middle;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    tbody tr:last-child td { border-bottom: 0; }
+    tbody tr:hover { background: #f8faff; }
+    th { height: 44px; color: var(--text-secondary); background: #fafbfc; font-size: 13px; font-weight: 600; }
+    td { color: var(--text); font-size: 13px; }
+    .number-col { text-align: right; }
+    .status-cell { text-align: center; }
+    .checkbox-col { width: 46px; text-align: center; }
+    .dept-col { width: 120px; }
+    .name-col { width: 190px; }
+    .type-col { width: 90px; }
+    .count-col { width: 115px; }
+    .change-col { width: 140px; }
+    .status-col { width: 105px; }
+    .year-col { width: 110px; }
+    .time-col { width: 170px; }
+    .action-col { position: sticky; right: 0; z-index: 2; width: 230px; background: #fafbfc; box-shadow: -2px 0 4px rgba(0,0,0,.03); }
+    td.action-col { background: #fff; }
+    tbody tr:hover td.action-col { background: #f8faff; }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      height: 24px;
+      padding: 0 8px;
+      border: 1px solid;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    .tag-draft { color: #d46b08; background: #fff7e6; border-color: #ffd591; }
+    .tag-success { color: #389e0d; background: #f6ffed; border-color: #b7eb8f; }
+    .link {
+      padding: 0;
+      color: var(--primary);
+      background: none;
+      border: 0;
+      margin-right: 0;
+    }
+    .link + .link { margin-left: 9px; padding-left: 9px; border-left: 1px solid var(--border); }
+    .link:hover { color: var(--primary-hover); }
+    .link.danger { color: #ff4d4f; }
+    .link:disabled { color: #b8bfc9; cursor: not-allowed; }
+    .link:disabled:hover { color: #b8bfc9; }
+
+    .empty { display: none; padding: 64px 20px; text-align: center; color: #8c8c8c; }
+    .empty-icon { margin-bottom: 10px; color: #bfbfbf; font-size: 42px; }
+
+    .pagination-row {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 12px;
+      padding-top: 18px;
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+
+    .pages { display: flex; gap: 8px; }
+    .page-btn {
+      min-width: 32px;
+      height: 32px;
+      padding: 0 8px;
+      border: 1px solid #d9d9d9;
+      border-radius: 6px;
+      background: white;
+    }
+    .page-btn:hover:not(:disabled) { color: var(--primary); border-color: var(--primary); }
+    .page-btn.active { color: white; background: var(--primary); border-color: var(--primary); }
+    .page-btn:disabled { color: #bfbfbf; cursor: not-allowed; }
+    .size-select { width: 96px; height: 32px; }
+    .jump-input { width: 54px; height: 32px; text-align: center; }
+
+    .mask {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: none;
+      background: rgba(0,0,0,.42);
+    }
+
+    .drawer {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 480px;
+      background: white;
+      box-shadow: -4px 0 16px rgba(0,0,0,.12);
+      transform: translateX(100%);
+      transition: transform .25s ease;
+    }
+
+    .mask.open { display: block; }
+    .mask.open .drawer { transform: translateX(0); }
+    .drawer-header {
+      height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 22px;
+      border-bottom: 1px solid var(--border);
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .close { border: 0; background: none; font-size: 23px; color: #777; }
+    .drawer-body { padding: 24px; }
+    .detail-grid { display: grid; grid-template-columns: 128px 1fr; border: 1px solid var(--border); border-bottom: 0; }
+    .detail-grid dt, .detail-grid dd { margin: 0; padding: 13px 14px; border-bottom: 1px solid var(--border); }
+    .detail-grid dt { color: var(--text-secondary); background: #fafbfc; border-right: 1px solid var(--border); }
+
+    .confirm-mask {
+      position: fixed;
+      inset: 0;
+      z-index: 120;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,.42);
+    }
+    .confirm-mask.open { display: flex; }
+    .confirm-dialog {
+      width: 420px;
+      padding: 22px 24px 18px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 8px 28px rgba(0,0,0,.16);
+    }
+    .confirm-title { margin-bottom: 10px; font-size: 16px; font-weight: 600; }
+    .confirm-text { color: var(--text-secondary); line-height: 1.7; }
+    .confirm-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+    .btn-danger { color: #fff; border-color: #ff4d4f; background: #ff4d4f; }
+    .btn-danger:hover { color: #fff; border-color: #ff7875; background: #ff7875; }
+
+    .toast {
+      position: fixed;
+      top: 74px;
+      left: 50%;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      border-radius: 6px;
+      background: white;
+      box-shadow: 0 6px 22px rgba(0,0,0,.16);
+      opacity: 0;
+      transform: translate(-50%, -10px);
+      pointer-events: none;
+      transition: all .2s;
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .toast-symbol { color: var(--primary); }
+
+    @media (max-width: 1200px) {
+      .filters { grid-template-columns: 1fr 1fr; }
+      .filter-actions { justify-content: flex-end; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="topbar-left">
+        <span class="brand-mark">普</span>
+        <span class="system-name">面积普查与检查管理系统</span>
+      </div>
+      <div class="topbar-right">
+        <button class="topbar-control" title="当前系统">面积业务系统 <span>⌄</span></button>
+        <button class="topbar-control" title="当前角色">管理部 <span>⌄</span></button>
+        <span class="env-badge">演示环境</span>
+        <div class="user"><span class="avatar">管</span><span>管理部用户</span><span>⌄</span></div>
+      </div>
+    </header>
+
+    <aside class="sider">
+      <nav class="menu" aria-label="系统菜单">
+        <section class="menu-group" id="surveyMenu">
+          <div class="menu-group-title" onclick="toggleMenu('surveyMenu')">
+            <span class="menu-icon">▦</span><span>面积普查</span><span class="menu-badge">5</span><span class="menu-arrow">⌄</span>
+          </div>
+          <div class="menu-children">
+            <a class="menu-item selected" href="area-survey-plan-list.html">面积普查任务管理</a>
+            <a class="menu-item" href="area-survey-station-details.html">面积普查站点明细</a><a class="menu-item" href="area-survey-offnetwork-stats.html">未在网建筑物统计</a>
+            <a class="menu-item" href="area-survey-office-tasks.html">我的面积普查任务（片区所）</a>
+            <a class="menu-item" href="area-survey-surveyor-tasks.html">我的面积普查任务（普查人员）</a>
+          </div>
+        </section>
+        <section class="menu-group collapsed" id="inspectionMenu">
+          <div class="menu-group-title" onclick="toggleMenu('inspectionMenu')">
+            <span class="menu-icon">✓</span><span>面积检查</span><span class="menu-arrow">⌄</span>
+          </div>
+          <div class="menu-children">
+            <div class="menu-item" title="面积检查页面沿用后续建设成果，当前仅保留菜单入口">面积检查任务管理<span class="menu-note">待接入</span></div>
+          </div>
+        </section>
+      </nav>
+    </aside>
+
+    <main>
+      <div class="breadcrumb">首页&nbsp;&nbsp;/&nbsp;&nbsp;面积普查&nbsp;&nbsp;/&nbsp;&nbsp;<b>面积普查任务管理</b></div>
+      <div class="page-heading">
+        <div>
+          <h1>面积普查任务管理</h1>
+          <div class="subtitle">统一查看和管理面积普查计划</div>
+        </div>
+      </div>
+
+      <section class="card filters" aria-label="查询条件">
+        <div class="field">
+          <label for="planName">计划名称</label>
+          <input id="planName" class="control" placeholder="请输入计划名称" />
+        </div>
+        <div class="field">
+          <label for="year">所属年度</label>
+          <select id="year" class="control">
+            <option value="">全部</option>
+            <option>2026年</option>
+            <option>2027年</option>
+            <option>2025年</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="surveyType">普查类型</label>
+          <select id="surveyType" class="control">
+            <option value="">全部</option>
+            <option>用户站</option>
+            <option>自管站</option>
+            <option>对公户</option>
+          </select>
+        </div>
+        <div class="filter-actions">
+          <button class="btn btn-primary" id="searchBtn"><span class="btn-icon">⌕</span>搜索</button>
+          <button class="btn" id="resetBtn"><span class="btn-icon">↻</span>重置</button>
+        </div>
+      </section>
+
+      <section class="card list-card">
+        <div class="toolbar">
+          <div class="toolbar-title">普查计划列表<span class="toolbar-count">完整展示计划及任务统计</span></div>
+          <a class="btn btn-primary" href="area-survey-plan-create.html">＋ 新建普查计划</a>
+        </div>
+
+        <div class="table-wrap" id="tableWrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="checkbox-col"><input type="checkbox" aria-label="全选" disabled /></th>
+                <th class="dept-col">所属管理部</th>
+                <th class="name-col">计划名称</th>
+                <th class="type-col">普查类型</th>
+                <th class="count-col number-col">任务完成统计</th>
+                <th class="change-col number-col">有面积变化站点数</th>
+                <th class="status-col status-cell">计划状态</th>
+                <th class="year-col">所属年度</th>
+                <th class="time-col">创建时间</th>
+                <th class="action-col">操作</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+        <div class="empty" id="emptyState"><div class="empty-icon">□</div><div>暂无符合条件的普查计划</div></div>
+
+        <div class="pagination-row">
+          <span id="totalText">共 0 个项目</span>
+          <div class="pages" id="pages"></div>
+          <select id="pageSize" class="control size-select" aria-label="每页条数">
+            <option value="10">10条/页</option>
+            <option value="20">20条/页</option>
+            <option value="50">50条/页</option>
+          </select>
+          <span>跳至</span>
+          <input id="jumpPage" class="control jump-input" type="number" min="1" value="1" aria-label="跳转页码" />
+          <span>页</span>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="mask" id="detailMask" onclick="closeDrawer(event)">
+    <aside class="drawer" role="dialog" aria-modal="true" aria-label="计划详情">
+      <div class="drawer-header"><span>普查计划详情</span><button class="close" onclick="closeDrawer()">×</button></div>
+      <div class="drawer-body"><dl class="detail-grid" id="detailContent"></dl></div>
+    </aside>
+  </div>
+
+  <div class="confirm-mask" id="deleteMask">
+    <div class="confirm-dialog" role="dialog" aria-modal="true" aria-label="删除草稿确认">
+      <div class="confirm-title">删除草稿计划</div>
+      <div class="confirm-text" id="deleteText">删除后无法恢复，是否继续？</div>
+      <div class="confirm-actions">
+        <button class="btn" onclick="closeDeleteConfirm()">取消</button>
+        <button class="btn btn-danger" onclick="confirmDelete()">确认删除</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"><span class="toast-symbol">●</span><span id="toastText"></span></div>
+
+  <script>
+    const STORAGE_KEY = 'areaSurveyPlans';
+    const departments = ['裕华管理部', '长安管理部', '桥西管理部', '新华管理部'];
+    const types = ['用户站', '自管站', '对公户'];
+    const years = ['2026年', '2027年', '2025年'];
+    const baseRecords = Array.from({ length: 27 }, (_, index) => {
+      const number = index + 1;
+      const total = 18 + (index % 5) * 4;
+      const completed = index % 4 === 0 ? 0 : Math.min(total, 6 + (index % 9) * 2);
+      return {
+        id: number,
+        department: departments[index % departments.length],
+        name: `${2026 - (index % 3)}年面积普查计划${number > 9 ? number : '0' + number}`,
+        type: types[index % types.length],
+        completed,
+        total,
+        changedSites: index % 4 === 0 ? 0 : 12 + ((index * 11) % 64),
+        status: index % 4 === 0 ? '草稿' : '创建成功',
+        year: years[index % years.length],
+        createdAt: `2026-07-${String(14 - (index % 12)).padStart(2, '0')} ${String(9 + (index % 9)).padStart(2, '0')}:${String((index * 7) % 60).padStart(2, '0')}:08`
+      };
+    });
+
+    function loadStoredPlans() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]').map(item => ({
+          ...item,
+          type: item.type === '部分报停' ? '对公户' : item.type
+        }));
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function consumeIncomingPlan() {
+      const raw = new URLSearchParams(location.search).get('data');
+      if (!raw) return;
+      try {
+        const incoming = JSON.parse(raw);
+        if (incoming.type === '部分报停') incoming.type = '对公户';
+        const plans = loadStoredPlans().filter(item => String(item.id) !== String(incoming.id));
+        plans.unshift(incoming);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(plans));
+        if (incoming.status === '创建成功') {
+          const taskKey = 'areaSurveyTasks';
+          const tasks = JSON.parse(localStorage.getItem(taskKey) || '[]').filter(item => String(item.planId) !== String(incoming.id));
+          (incoming.stations || []).forEach(station => tasks.push({
+            id: `task-${incoming.id}-${station.id}`,
+            planId: incoming.id,
+            planName: incoming.name,
+            stationId: station.id,
+            stationCode: station.code,
+            stationName: station.name,
+            status: '待分配',
+            createdAt: incoming.updatedAt
+          }));
+          localStorage.setItem(taskKey, JSON.stringify(tasks));
+        }
+      } catch (error) {
+        showToast('计划数据读取失败，请返回新建页面重试');
+      }
+    }
+
+    function mergeRecords(stored) {
+      const hiddenIds = JSON.parse(localStorage.getItem('areaSurveyHiddenBasePlans') || '[]');
+      const storedIds = new Set(stored.map(item => String(item.id)));
+      return [...stored, ...baseRecords.filter(item => !storedIds.has(String(item.id)) && !hiddenIds.includes(String(item.id)))];
+    }
+
+    let storedPlans = loadStoredPlans();
+    let records = mergeRecords(storedPlans);
+    let filteredRecords = [...records];
+    let currentPage = 1;
+    let currentPageSize = 10;
+    let toastTimer;
+    let pendingDeleteId = null;
+    consumeIncomingPlan();
+    storedPlans = loadStoredPlans();
+    records = mergeRecords(storedPlans);
+    filteredRecords = [...records];
+
+    function toggleMenu(id) {
+      document.getElementById(id).classList.toggle('collapsed');
+    }
+
+    function statusTag(status) {
+      return status === '草稿'
+        ? '<span class="tag tag-draft">草稿</span>'
+        : '<span class="tag tag-success">创建成功</span>';
+    }
+
+    function actionButtons(row) {
+      const safeId = JSON.stringify(String(row.id));
+      const planData = encodeURIComponent(JSON.stringify(row));
+      const detail = `<a class="link" href="area-survey-plan-detail.html?data=${planData}">详情</a>`;
+      if (row.status !== '草稿') return detail;
+      return detail +
+        `<a class="link" href="area-survey-plan-create.html?id=${encodeURIComponent(row.id)}&data=${planData}">编辑</a>` +
+        `<button class="link danger" onclick='openDeleteConfirm(${safeId})'>删除</button>`;
+    }
+
+    function renderTable() {
+      const totalPages = Math.max(1, Math.ceil(filteredRecords.length / currentPageSize));
+      if (currentPage > totalPages) currentPage = totalPages;
+      const start = (currentPage - 1) * currentPageSize;
+      const pageData = filteredRecords.slice(start, start + currentPageSize);
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = pageData.map(row => `
+        <tr>
+          <td class="checkbox-col"><input type="checkbox" aria-label="选择${row.name}" /></td>
+          <td title="${row.department}">${row.department}</td>
+          <td title="${row.name}">${row.name}</td>
+          <td>${row.type}</td>
+          <td class="number-col">${row.completed}/${row.total}</td>
+          <td class="number-col">${row.changedSites}</td>
+          <td class="status-cell">${statusTag(row.status)}</td>
+          <td>${row.year}</td>
+          <td>${row.createdAt}</td>
+          <td class="action-col">${actionButtons(row)}</td>
+        </tr>`).join('');
+
+      const hasData = pageData.length > 0;
+      document.getElementById('tableWrap').style.display = hasData ? 'block' : 'none';
+      document.getElementById('emptyState').style.display = hasData ? 'none' : 'block';
+      document.getElementById('totalText').textContent = `共 ${filteredRecords.length} 个项目`;
+      document.getElementById('jumpPage').value = currentPage;
+      document.getElementById('jumpPage').max = totalPages;
+      renderPagination(totalPages);
+    }
+
+    function renderPagination(totalPages) {
+      const pages = document.getElementById('pages');
+      const visible = [];
+      const left = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
+      const right = Math.min(totalPages, Math.max(5, currentPage + 2));
+      for (let page = left; page <= right; page++) visible.push(page);
+      pages.innerHTML = `
+        <button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="goToPage(${currentPage - 1})">‹</button>
+        ${visible.map(page => `<button class="page-btn ${page === currentPage ? 'active' : ''}" onclick="goToPage(${page})">${page}</button>`).join('')}
+        <button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="goToPage(${currentPage + 1})">›</button>`;
+    }
+
+    function goToPage(page) {
+      const totalPages = Math.max(1, Math.ceil(filteredRecords.length / currentPageSize));
+      currentPage = Math.min(Math.max(1, page), totalPages);
+      renderTable();
+    }
+
+    function search() {
+      const keyword = document.getElementById('planName').value.trim().toLowerCase();
+      const year = document.getElementById('year').value;
+      const type = document.getElementById('surveyType').value;
+      filteredRecords = records.filter(row =>
+        (!keyword || row.name.toLowerCase().includes(keyword)) &&
+        (!year || row.year === year) &&
+        (!type || row.type === type)
+      );
+      currentPage = 1;
+      renderTable();
+    }
+
+    function reset() {
+      document.getElementById('planName').value = '';
+      document.getElementById('year').value = '';
+      document.getElementById('surveyType').value = '';
+      filteredRecords = [...records];
+      currentPage = 1;
+      renderTable();
+    }
+
+    function openDetail(id) {
+      const row = records.find(item => String(item.id) === String(id));
+      if (!row) return;
+      const fields = [
+        ['计划名称', row.name], ['所属管理部', row.department], ['普查类型', row.type],
+        ['计划状态', statusTag(row.status)], ['所属年度', row.year],
+        ['任务完成统计', `${row.completed}/${row.total}`], ['有面积变化站点数', row.changedSites],
+        ['创建时间', row.createdAt]
+      ];
+      document.getElementById('detailContent').innerHTML = fields
+        .map(([label, value]) => `<dt>${label}</dt><dd>${value}</dd>`).join('');
+      document.getElementById('detailMask').classList.add('open');
+    }
+
+    function openDeleteConfirm(id) {
+      const row = records.find(item => String(item.id) === String(id));
+      if (!row || row.status !== '草稿') return;
+      pendingDeleteId = String(id);
+      document.getElementById('deleteText').textContent = `“${row.name}”删除后无法恢复，是否继续？`;
+      document.getElementById('deleteMask').classList.add('open');
+    }
+
+    function closeDeleteConfirm() {
+      pendingDeleteId = null;
+      document.getElementById('deleteMask').classList.remove('open');
+    }
+
+    function confirmDelete() {
+      if (!pendingDeleteId) return;
+      const stored = loadStoredPlans();
+      const isStored = stored.some(item => String(item.id) === pendingDeleteId);
+      if (isStored) {
+        storedPlans = stored.filter(item => String(item.id) !== pendingDeleteId);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(storedPlans));
+      }
+      const hidden = JSON.parse(localStorage.getItem('areaSurveyHiddenBasePlans') || '[]');
+      if (baseRecords.some(item => String(item.id) === pendingDeleteId) && !hidden.includes(pendingDeleteId)) hidden.push(pendingDeleteId);
+      localStorage.setItem('areaSurveyHiddenBasePlans', JSON.stringify(hidden));
+      records = mergeRecords(storedPlans);
+      filteredRecords = [...records];
+      closeDeleteConfirm();
+      renderTable();
+      showToast('草稿计划已删除，列表已更新');
+    }
+
+    function closeDrawer(event) {
+      if (event && event.target !== document.getElementById('detailMask')) return;
+      document.getElementById('detailMask').classList.remove('open');
+    }
+
+    function showToast(message) {
+      clearTimeout(toastTimer);
+      document.getElementById('toastText').textContent = message;
+      document.getElementById('toast').classList.add('show');
+      toastTimer = setTimeout(() => document.getElementById('toast').classList.remove('show'), 2200);
+    }
+
+    document.getElementById('searchBtn').addEventListener('click', search);
+    document.getElementById('resetBtn').addEventListener('click', reset);
+    document.getElementById('planName').addEventListener('keydown', event => {
+      if (event.key === 'Enter') search();
+    });
+    document.getElementById('pageSize').addEventListener('change', event => {
+      currentPageSize = Number(event.target.value);
+      currentPage = 1;
+      renderTable();
+    });
+    document.getElementById('jumpPage').addEventListener('change', event => goToPage(Number(event.target.value)));
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape') {
+        closeDrawer();
+        closeDeleteConfirm();
+      }
+    });
+
+    records = mergeRecords(storedPlans);
+    filteredRecords = [...records];
+    renderTable();
+    const savedType = new URLSearchParams(location.search).get('saved');
+    if (savedType === 'draft') showToast('计划已暂存，可在列表中继续编辑');
+    if (savedType === 'created') showToast('普查计划创建成功，已生成对应普查任务');
+  </script>
+</body>
+</html>

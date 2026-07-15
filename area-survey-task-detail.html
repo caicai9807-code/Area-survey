@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>普查任务详情</title>
+  <link rel="stylesheet" href="area-survey-detail.css" />
+  <style>
+    main { padding-bottom: 84px; }
+    .page-actions { position: fixed; left: var(--sider-width); right: 0; bottom: 0; z-index: 40; height: 64px; display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 0 24px; background: rgba(255,255,255,.98); border-top: 1px solid var(--border); box-shadow: 0 -2px 8px rgba(0,0,0,.04); }
+    .building-table table { min-width: 1260px; }
+    .building-table th:last-child,
+    .building-table td:last-child { position:sticky; right:0; z-index:2; background:#fff; box-shadow:-3px 0 6px rgba(0,0,0,.04); }
+    .building-table th:last-child { z-index:3; background:#fafbfc; }
+    .building-table tbody tr:hover td:last-child { background:#f8faff; }
+    .change-up { color: var(--success); }
+    .change-down { color: var(--danger); }
+    .building-detail-grid { display: grid; grid-template-columns: repeat(2, minmax(320px, 1fr)); column-gap: 56px; row-gap: 0; }
+    .building-detail-grid .desc-item { min-height: 48px; }
+    .building-alert { margin-bottom: 16px; padding: 11px 14px; color: #ad6800; background: #fffbe6; border: 1px solid #ffe58f; border-radius: 6px; }
+    .detail-section-title { display: flex; align-items: center; gap: 10px; margin: 22px 0 12px; font-size: 15px; font-weight: 600; }
+    .detail-section-title::after { content: ""; flex: 1; height: 1px; background: var(--divider); }
+    .pdf-link { display: inline-flex; align-items: center; gap: 5px; color: var(--primary); background: none; border: 0; padding: 0; }
+    .pdf-page { width: min(720px, 88%); min-height: 500px; padding: 52px 58px; color: #2c3e50; background: #fff; box-shadow: 0 4px 22px rgba(0,0,0,.3); }
+    .pdf-page h2 { margin: 0 0 12px; text-align: center; font-size: 24px; }
+    .pdf-page .pdf-subtitle { margin-bottom: 36px; color: #8c95a6; text-align: center; }
+    .pdf-page p { margin: 18px 0; line-height: 1.8; }
+    .pdf-stamp { width: 116px; height: 116px; display: grid; place-items: center; margin: 54px 0 0 auto; color: #d4380d; border: 3px solid #d4380d; border-radius: 50%; transform: rotate(-12deg); font-weight: 600; text-align: center; }
+    .pdf-toolbar { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 12px; color: #fff; background: #1f1f1f; }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-left"><span class="brand-mark">普</span><span class="system-name">面积普查与检查管理系统</span></div>
+    <div class="topbar-right">
+      <button class="topbar-control">面积业务系统⌄</button>
+      <select id="roleSelect" class="role-select" aria-label="角色切换"><option>管理部审核人员</option><option>片区所所长</option><option>普查员</option><option>只读用户</option></select>
+      <span class="env-badge">演示环境</span><div class="user"><span class="avatar">管</span><span>管理部用户</span><span>⌄</span></div>
+    </div>
+  </header>
+
+  <aside class="sider"><nav class="menu"><section><div class="menu-group-title"><span class="menu-icon">▦</span><span>面积普查</span><span class="menu-badge">5</span><span class="menu-arrow">⌄</span></div><a class="menu-item selected" href="area-survey-plan-list.html">面积普查任务管理</a><a class="menu-item" href="area-survey-station-details.html">面积普查站点明细</a><a class="menu-item" href="area-survey-offnetwork-stats.html">未在网建筑物统计</a><a class="menu-item" href="area-survey-office-tasks.html">我的面积普查任务（片区所）</a><a class="menu-item" href="area-survey-surveyor-tasks.html">我的面积普查任务（普查人员）</a></section><section><div class="menu-group-title"><span class="menu-icon">✓</span><span>面积检查</span><span class="menu-arrow">⌄</span></div><div class="menu-item">面积检查任务管理<span class="menu-note">待接入</span></div></section></nav></aside>
+
+  <main>
+    <div class="breadcrumb"><a href="area-survey-plan-list.html">面积普查任务管理</a>&nbsp;&nbsp;/&nbsp;&nbsp;<a id="planBreadcrumb" href="area-survey-plan-detail.html">计划详情</a>&nbsp;&nbsp;/&nbsp;&nbsp;任务详情</div>
+    <div class="page-heading">
+      <div class="heading-left"><a id="backToPlan" class="back-link" href="area-survey-plan-detail.html">←</a><div><h1 id="taskTitle">普查任务详情</h1><div class="subtitle">查看站点普查数据、业务资料和审批记录</div></div></div>
+      <div class="heading-actions"><span id="taskStatus"></span></div>
+    </div>
+
+    <section class="card">
+      <div class="card-header"><div class="card-title">站点基础信息</div></div>
+      <div class="card-body"><div class="descriptions" id="stationDescriptions"></div></div>
+    </section>
+
+    <div class="detail-layout" style="margin-top:16px">
+      <div>
+        <section class="card">
+          <div class="card-header"><div class="card-title">面积汇总</div><span style="color:var(--text-tertiary);font-size:12px">单位：㎡</span></div>
+          <div class="card-body"><div class="summary-row" id="areaSummary"></div></div>
+        </section>
+
+        <section class="card">
+          <div class="card-body" style="padding-top:0">
+            <div class="tabs"><button class="tab-btn active" data-tab="summary" onclick="switchTab('summary')">汇总表</button><button class="tab-btn" data-tab="plan" onclick="switchTab('plan')">平面图</button><button class="tab-btn" id="doorTabButton" data-tab="door" onclick="switchTab('door')">门头图片</button></div>
+            <div id="tab-summary" class="tab-panel active building-table">
+              <div class="table-wrap"><table><thead><tr><th style="width:55px">序号</th><th style="width:190px">楼号或建筑物名称</th><th style="width:75px">层数</th><th style="width:90px">用热性质</th><th style="width:90px">收费类别</th><th style="width:95px">普查状态</th><th style="width:125px" class="number">原普查表面积</th><th style="width:125px" class="number">现普查表面积</th><th style="width:130px" class="number">现较原面积变化</th><th style="width:90px" class="number">变化率</th><th style="width:95px">控制方式</th><th style="width:75px">操作</th></tr></thead><tbody id="buildingBody"></tbody></table></div>
+              <div class="pagination-row"><span>共 7 个项目</span><div class="pages"><button class="page-btn active">1</button></div><span>10条/页</span></div>
+            </div>
+            <div id="tab-plan" class="tab-panel"><div class="gallery" id="planGallery"></div></div>
+            <div id="tab-door" class="tab-panel"><div class="gallery" id="doorGallery"></div></div>
+          </div>
+        </section>
+      </div>
+
+      <aside class="card" style="margin-top:0;max-height:calc(100vh - 96px);overflow:auto;position:sticky;top:76px">
+        <div class="card-header"><div class="card-title">审批记录</div></div>
+        <div class="card-body"><div class="timeline" id="timeline"></div></div>
+      </aside>
+    </div>
+  </main>
+
+  <div class="page-actions"><a id="returnBtn" class="btn" href="area-survey-plan-detail.html">返回</a><button id="auditBtn" class="btn btn-primary" onclick="openAudit()" style="display:none">审核</button></div>
+
+  <div class="modal-mask" id="auditMask">
+    <section class="modal" role="dialog" aria-modal="true" aria-label="任务审核">
+      <div class="modal-header"><div class="modal-title">审核</div><button class="close" onclick="closeAudit()">×</button></div>
+      <div class="modal-body">
+        <div class="form-row"><label class="required">审批结果</label><div class="radio-group"><label><input type="radio" name="result" value="通过" checked onchange="toggleRejectFields()" /> 通过</label><label><input type="radio" name="result" value="不通过" onchange="toggleRejectFields()" /> 不通过</label></div><div class="field-error" id="resultError"></div></div>
+        <div class="form-row" id="returnRow" style="display:none"><label class="required" for="returnNode">退回节点</label><select id="returnNode" class="control"></select><div class="return-node-tip" id="returnNodeTip"></div><div class="field-error" id="returnError"></div></div>
+        <div class="form-row"><label id="opinionLabel" for="opinion">审批意见</label><textarea id="opinion" class="textarea" maxlength="300" placeholder="审核通过时选填；不通过时请填写退回原因" oninput="updateOpinionCount()"></textarea><div class="textarea-meta"><div class="field-error" id="opinionError"></div><span id="opinionCount">0/300</span></div></div>
+      </div>
+      <div class="modal-footer"><button class="btn" onclick="closeAudit()">取消</button><button class="btn btn-primary" onclick="submitAudit()">确定</button></div>
+    </section>
+  </div>
+
+  <div class="modal-mask" id="buildingMask">
+    <section class="modal large" role="dialog" aria-modal="true" aria-label="楼栋详情">
+      <div class="modal-header"><div class="modal-title" id="buildingModalTitle">楼栋详情</div><button class="close" onclick="closeBuildingDetail()">×</button></div>
+      <div class="modal-body">
+        <div id="buildingAlert" class="building-alert" style="display:none">该楼栋尚未完成普查，以下信息待补充。</div>
+        <div class="building-detail-grid" id="buildingDescriptions"></div>
+        <div class="detail-section-title">变更详情</div>
+        <div id="changeDetailContent"></div>
+      </div>
+      <div class="modal-footer"><button class="btn" onclick="closeBuildingDetail()">关闭</button></div>
+    </section>
+  </div>
+
+  <div class="modal-mask" id="pdfMask" style="z-index:140">
+    <section class="modal preview-modal" role="dialog" aria-modal="true" aria-label="模拟PDF预览">
+      <div class="modal-header"><div><div class="modal-title" id="pdfTitle">附件预览</div><div style="margin-top:3px;color:#b8bfc9;font-size:12px">模拟附件，仅供原型演示</div></div><button class="close" onclick="closePdfPreview()">×</button></div>
+      <div class="preview-body" style="max-height:calc(100vh - 190px);overflow:auto"><div class="pdf-page" id="pdfPage"></div></div>
+      <div class="pdf-toolbar"><button class="btn" id="pdfPrev" onclick="changePdfPage(-1)">上一页</button><span id="pdfPageInfo">1 / 3</span><button class="btn" id="pdfNext" onclick="changePdfPage(1)">下一页</button><button class="btn" onclick="closePdfPreview()">关闭</button></div>
+    </section>
+  </div>
+
+  <div class="modal-mask" id="previewMask" onclick="closePreview(event)">
+    <section class="modal preview-modal" role="dialog" aria-modal="true" aria-label="图片预览">
+      <div class="modal-header"><div class="modal-title" id="previewTitle">图片预览</div><button class="close" onclick="closePreview()">×</button></div>
+      <div class="preview-body"><img id="previewImage" alt="业务图片预览" /></div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const payload = params.get('data');
+    let context = payload ? JSON.parse(payload) : null;
+    let plan = context?.plan || { id:'demo', name:'2026年面积普查计划', year:'2026年', type:'自管站', status:'创建成功' };
+    if (plan.type === '部分报停') plan.type = '对公户';
+    let task = context?.task || {
+      id:'task-demo', status:'管理部审核', auditStatus:'待审核', updatedAt:'2026-07-14 10:30:08', surveyors:'张三、李晨晨',
+      station:{ id:'station-1', code:'60218B001', name:'春江花月西站', department:'桥西管理部', office:'桥西片区所', district:'桥西区', address:'石家庄市桥西区新石中路166号' }, timeline:[]
+    };
+    let toastTimer;
+    let auditSubmitting = false;
+    let currentBuilding = null;
+    let currentPdfFile = '';
+    let currentPdfPage = 1;
+    const pdfTotalPages = 3;
+    const buildingNames = ['石家庄市桥西区实验小学','一加二联合不动产','卓优教育','百医堂','萌乐园','春江花月6号楼','春江花月7号楼'];
+    const originalAreas = [25874.36,454545.54,45845645.25,78458.41,58762.47,12858.56,2167845.15];
+    const buildingData = buildingNames.map((name,index) => {
+      const pending = index === 1 || index === 5;
+      const currentArea = pending ? null : originalAreas[index] + (index === 2 ? 452314.25 : index === 4 ? -1235.78 : 0);
+      return {
+        id: `building-${index + 1}`,
+        name,
+        floors: index === 0 ? '1-2F' : index === 5 ? '3-18F' : '1F',
+        yearBuilt: 2008 + (index % 6),
+        heatNature: index > 4 ? '住宅' : index === 0 ? '办公' : '商业',
+        feeCategory: index > 4 ? '居民' : '非居民',
+        controlMode: '并联',
+        surveyBasis: index % 3 === 0 ? '建设图纸' : '实测',
+        heatingType: index % 2 === 0 ? '地暖' : '散热器',
+        originalArea: originalAreas[index],
+        currentArea,
+        status: pending ? '待普查' : '普查完成',
+        attachment: index % 2 === 0 ? '房产证.pdf' : '核查依据.pdf',
+        remark: pending ? '该楼栋本年度普查数据尚未填报。' : index === 0 ? '卫生间35.94平方米无采暖设施，民机未计入，不含地下一层。' : '面积数据已完成现场核验。'
+      };
+    });
+
+    function tag(status) {
+      const map = { '待分配':'orange','进行中':'blue','所长审核':'blue','管理部审核':'blue','已结束':'gray','已退回':'red','通过':'green' };
+      return `<span class="tag tag-${map[status] || 'gray'}">${status}</span>`;
+    }
+    function nowText() { const d=new Date(),p=v=>String(v).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; }
+
+    function svgData(kind,index) {
+      const isPlan = kind === '平面图';
+      const colors = isPlan ? ['#e8f1ff','#d6e4ff','#91caff'] : ['#d9c7ae','#a78b6d','#6d8299'];
+      const drawing = isPlan
+        ? `<rect x="90" y="60" width="620" height="330" rx="8" fill="#fff" stroke="#4c78f5" stroke-width="5"/><path d="M260 60v330M510 60v330M90 210h620M380 210v180" stroke="#8c95a6" stroke-width="4"/><path d="M130 105h90v55h-90zm180 0h150v55H310zm250 0h110v55H560z" fill="#f0f5ff" stroke="#91caff" stroke-width="3"/><text x="400" y="445" text-anchor="middle" font-size="24" fill="#5a6577">换热站建筑平面示意图 ${index}</text>`
+        : `<rect width="800" height="460" fill="#dce7ef"/><rect x="90" y="90" width="620" height="300" rx="4" fill="#f4eee4" stroke="#8b7355" stroke-width="6"/><rect x="155" y="205" width="125" height="185" fill="#7890a4"/><rect x="330" y="155" width="300" height="82" fill="#4c78f5"/><text x="480" y="207" text-anchor="middle" font-size="31" fill="#fff">${task.station.name}</text><rect x="355" y="270" width="95" height="80" fill="#9fc2dd"/><rect x="510" y="270" width="95" height="80" fill="#9fc2dd"/><text x="400" y="440" text-anchor="middle" font-size="22" fill="#5a6577">门头现场照片 ${index}</text>`;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="460" viewBox="0 0 800 460"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${colors[0]}"/><stop offset="1" stop-color="${colors[1]}"/></linearGradient></defs><rect width="800" height="460" fill="url(#g)"/>${drawing}</svg>`;
+      return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+    }
+
+    function defaultTimeline() {
+      if (task.timeline?.length) return task.timeline;
+      const items = [
+        { title:'任务上报', person:'张三（填报员）', time:'2026-07-12 11:20', result:'通过', comment:'已完成全站楼栋普查。' },
+        { title:'片区所审核', person:'李明（主任）', time:'2026-07-13 09:30', result:'通过', comment:'数据核对无误。' }
+      ];
+      if (task.status === '管理部审核') items.unshift({ title:'管理部审核', person:'当前待处理', time:'待处理', result:'当前', comment:'等待管理部审核人员处理。' });
+      if (task.status === '所长审核') return [{ title:'片区所审核', person:'当前待处理', time:'待处理', result:'当前', comment:'等待片区所所长处理。' }, items[items.length-1]];
+      if (task.status === '已结束') items.unshift({ title:'管理部审核', person:'王建国（负责人）', time:'2026-07-14 15:45', result:'通过', comment:'最终审核通过，任务结束。' });
+      if (task.status === '已退回') items.unshift({ title:'审核退回', person:'王建国（负责人）', time:'2026-07-14 15:45', result:'不通过', comment:'实测面积与去年偏差较大，请补充实测依据。' });
+      return items;
+    }
+
+    function renderBase() {
+      document.getElementById('taskTitle').textContent = task.station.name;
+      document.getElementById('taskStatus').innerHTML = tag(task.status);
+      document.getElementById('stationDescriptions').innerHTML = [
+        ['换热站编码',task.station.code],['用热地址',task.station.address],['所属管理部',task.station.department],['所属片区所',task.station.office],
+        ['行政区',task.station.district],['办事处','新石街道办事处'],['普查人员',task.surveyors || '张三、李晨晨'],['未入网建筑物数量','居民 2 户、非居民 3 户'],
+        ['站点小结','除本表所标示建筑物外，其余建筑物均不参加集中供热；未参加集中供热建筑物名称及明细标记为待补充。']
+      ].map(([label,value],index)=>`<div class="desc-item ${index===8?'full':''}"><span class="desc-label">${label}：</span><span class="desc-value">${value}</span></div>`).join('');
+      renderSummary();
+      renderBuildings();
+      renderGallery();
+      renderTimeline();
+      updateLinks();
+      updateAuditButton();
+    }
+
+    function renderSummary() {
+      const values = [{total:'4,827,430.75',house:'2,168,745.15',non:'2,658,685.60'},{total:'5,278,729.22',house:'2,168,745.15',non:'3,109,984.07'}];
+      document.getElementById('areaSummary').innerHTML = values.map((item,index)=>`<div class="summary-box ${index ? 'current' : ''}"><div class="summary-total"><strong>${item.total}</strong><span>${index?'现普查总面积':'原普查总面积'}</span></div><div class="summary-parts"><div class="summary-part">住宅分类小计<strong>${item.house}</strong></div><div class="summary-part">非住宅分类小计<strong>${item.non}</strong></div><div class="summary-part">多层<strong>0</strong></div><div class="summary-part">公寓<strong>0</strong></div><div class="summary-part">高层<strong>${item.house}</strong></div><div class="summary-part">非居<strong>${item.non}</strong></div><div class="summary-part">非协<strong>0</strong></div></div></div>`).join('');
+    }
+
+    function renderBuildings() {
+      document.getElementById('buildingBody').innerHTML = buildingData.map((building,index)=>{
+        const pending=building.status==='待普查', current=building.currentArea, change=pending?null:current-building.originalArea, rate=pending?null:(change/building.originalArea*100);
+        const changeClass=change>0?'change-up':change<0?'change-down':'';
+        return `<tr><td>${index+1}</td><td title="${building.name}">${building.name}</td><td>${building.floors}</td><td>${building.heatNature}</td><td>${building.feeCategory}</td><td>${pending?tag('待普查'):'<span class="tag tag-green">普查完成</span>'}</td><td class="number">${building.originalArea.toFixed(2)}</td><td class="number">${pending?'/':current.toFixed(2)}</td><td class="number ${changeClass}">${pending?'/':`${change>0?'+':''}${change.toFixed(2)}${change>0?'↑':change<0?'↓':''}`}</td><td class="number ${changeClass}">${pending?'/':`${rate.toFixed(2)}%`}</td><td>${building.controlMode}</td><td><button class="link" onclick="openBuildingDetail(${index})">查看</button></td></tr>`;
+      }).join('');
+    }
+
+    function formatChange(building) {
+      if (building.status === '待普查' || building.currentArea == null) return { change: '待补充', rate: '待补充', className: '' };
+      const change = building.currentArea - building.originalArea;
+      const rate = building.originalArea === 0 ? null : change / building.originalArea * 100;
+      return {
+        change: `${change > 0 ? '+' : ''}${change.toFixed(2)}${change > 0 ? '↑' : change < 0 ? '↓' : ''}`,
+        rate: rate == null ? '--' : `${rate > 0 ? '+' : ''}${rate.toFixed(2)}%`,
+        className: change > 0 ? 'change-up' : change < 0 ? 'change-down' : ''
+      };
+    }
+
+    function openBuildingDetail(index) {
+      currentBuilding = buildingData[index];
+      const metrics = formatChange(currentBuilding);
+      document.getElementById('buildingModalTitle').textContent = currentBuilding.name;
+      document.getElementById('buildingAlert').style.display = currentBuilding.status === '待普查' ? 'block' : 'none';
+      const values = [
+        ['楼号和建筑物名称', currentBuilding.name], ['层数', currentBuilding.floors],
+        ['建筑物年代', currentBuilding.yearBuilt], ['用热性质', currentBuilding.heatNature],
+        ['收费类别', currentBuilding.feeCategory], ['控制方式', currentBuilding.controlMode],
+        ['普查依据', currentBuilding.surveyBasis], ['暖气类型', currentBuilding.heatingType],
+        ['原普查面积（㎡）', currentBuilding.originalArea.toFixed(2)], ['现普查表面积（㎡）', currentBuilding.currentArea == null ? '待补充' : currentBuilding.currentArea.toFixed(2)],
+        ['现较原面积变化（㎡）', `<span class="${metrics.className}">${metrics.change}</span>`], ['变化率', `<span class="${metrics.className}">${metrics.rate}</span>`],
+        ['普查依据附件', `<button class="pdf-link" onclick="openPdfPreview('${currentBuilding.attachment}')">▣ ${currentBuilding.attachment}</button>`],
+        ['备注', currentBuilding.remark]
+      ];
+      document.getElementById('buildingDescriptions').innerHTML = values.map(([label,value]) => `<div class="desc-item"><span class="desc-label">${label}：</span><span class="desc-value">${value}</span></div>`).join('');
+      renderChangeDetails(currentBuilding);
+      document.getElementById('buildingMask').classList.add('open');
+    }
+
+    function closeBuildingDetail() { document.getElementById('buildingMask').classList.remove('open'); }
+
+    function renderChangeDetails(building) {
+      const container = document.getElementById('changeDetailContent');
+      if (building.status === '待普查') {
+        container.innerHTML = '<div class="empty-state"><div class="empty-icon">□</div>该楼栋尚未完成普查，变更明细待补充</div>';
+        return;
+      }
+      const rows = Array.from({ length: 5 }, (_, index) => ({
+        card: `0009822${2 + index * 2}`,
+        surveyArea: index === 0 ? building.floors : '1F',
+        basis: index === 0 ? building.surveyBasis : '实测',
+        attachment: '核查依据.pdf',
+        remark: index === 2 ? '第二层' : ''
+      }));
+      container.innerHTML = `<div class="table-wrap"><table style="min-width:760px"><thead><tr><th style="width:70px">序号</th><th style="width:160px">热费卡号</th><th style="width:120px">普查面积</th><th style="width:130px">普查依据</th><th style="width:160px">附件</th><th>备注</th></tr></thead><tbody>${rows.map((row,index) => `<tr><td>${index + 1}</td><td>${row.card}</td><td>${row.surveyArea}</td><td>${row.basis}</td><td><button class="pdf-link" onclick="openPdfPreview('${row.attachment}')">▣ ${row.attachment}</button></td><td>${row.remark}</td></tr>`).join('')}</tbody></table></div>`;
+    }
+
+    function openPdfPreview(fileName) {
+      currentPdfFile = fileName;
+      currentPdfPage = 1;
+      document.getElementById('pdfTitle').textContent = fileName;
+      renderPdfPage();
+      document.getElementById('pdfMask').classList.add('open');
+    }
+
+    function closePdfPreview() { document.getElementById('pdfMask').classList.remove('open'); }
+
+    function changePdfPage(delta) {
+      currentPdfPage = Math.min(Math.max(1, currentPdfPage + delta), pdfTotalPages);
+      renderPdfPage();
+    }
+
+    function renderPdfPage() {
+      const buildingName = currentBuilding?.name || '楼栋资料';
+      const pageContent = [
+        ['产权及建筑基本信息', `本附件用于说明“${buildingName}”的产权及建筑基本情况。`, '经核验，附件信息与系统登记信息一致。'],
+        ['面积核验依据', `原普查面积：${currentBuilding?.originalArea?.toFixed(2) || '待补充'}㎡`, `现普查面积：${currentBuilding?.currentArea == null ? '待补充' : currentBuilding.currentArea.toFixed(2) + '㎡'}`],
+        ['现场核验记录', '核验人员已对建筑用途、楼层和采暖范围进行现场确认。', `备注：${currentBuilding?.remark || '无'}`]
+      ][currentPdfPage - 1];
+      document.getElementById('pdfPage').innerHTML = `<h2>${pageContent[0]}</h2><div class="pdf-subtitle">${currentPdfFile} · 第 ${currentPdfPage} 页</div><p><strong>关联建筑：</strong>${buildingName}</p><p>${pageContent[1]}</p><p>${pageContent[2]}</p><p><strong>文件说明：</strong>本页面为高保真原型生成的模拟PDF内容，真实附件待接口接入后替换。</p><div class="pdf-stamp">面积普查<br/>模拟核验章</div>`;
+      document.getElementById('pdfPageInfo').textContent = `${currentPdfPage} / ${pdfTotalPages}`;
+      document.getElementById('pdfPrev').disabled = currentPdfPage === 1;
+      document.getElementById('pdfNext').disabled = currentPdfPage === pdfTotalPages;
+    }
+
+    function renderGallery() {
+      const showDoorImage = plan.type === '自管站';
+      document.getElementById('planGallery').innerHTML = [1,2].map(index=>imageCard('平面图',index)).join('');
+      document.getElementById('doorTabButton').hidden = !showDoorImage;
+      document.getElementById('tab-door').hidden = !showDoorImage;
+      document.getElementById('doorGallery').innerHTML = showDoorImage ? [1,2,3].map(index=>imageCard('门头图片',index)).join('') : '';
+      if(!showDoorImage && document.getElementById('tab-door').classList.contains('active')) switchTab('summary');
+    }
+    function imageCard(kind,index) { const src=svgData(kind,index); return `<div class="image-card" onclick="openPreview('${src}','${kind} ${index}')"><img src="${src}" alt="${kind} ${index}"/><div class="image-caption">${kind} ${index} · 点击预览</div></div>`; }
+
+    function renderTimeline() {
+      task.timeline = defaultTimeline();
+      document.getElementById('timeline').innerHTML = task.timeline.map(item=>{
+        const color=item.result==='通过'?'green':item.result==='不通过'?'red':item.result==='当前'?'blue':'gray';
+        return `<div class="timeline-item"><span class="timeline-dot ${color}"></span><div class="timeline-title"><span>${item.title}</span><span class="timeline-time">${item.time}</span></div><div class="timeline-person">${item.person}</div><div class="timeline-comment ${item.result==='不通过'?'danger':''}">${item.comment||'无审批意见'}</div></div>`;
+      }).join('');
+    }
+
+    function switchTab(name) { document.querySelectorAll('.tab-btn').forEach(btn=>btn.classList.toggle('active',btn.dataset.tab===name)); document.querySelectorAll('.tab-panel').forEach(panel=>panel.classList.toggle('active',panel.id===`tab-${name}`)); }
+    function openPreview(src,title) { document.getElementById('previewImage').src=src; document.getElementById('previewTitle').textContent=title; document.getElementById('previewMask').classList.add('open'); }
+    function closePreview(event) { if(event&&event.target!==document.getElementById('previewMask'))return; document.getElementById('previewMask').classList.remove('open'); }
+
+    function canAudit() { const role=document.getElementById('roleSelect').value; return (task.status==='所长审核'&&role==='片区所所长')||(task.status==='管理部审核'&&role==='管理部审核人员'); }
+    function updateAuditButton() { document.getElementById('auditBtn').style.display=canAudit()?'inline-flex':'none'; }
+    function openAudit() {
+      if(!canAudit())return;
+      document.querySelector('input[name="result"][value="通过"]').checked=true;
+      document.getElementById('opinion').value='';document.getElementById('returnError').textContent='';document.getElementById('opinionError').textContent='';
+      prepareReturnNodes();toggleRejectFields();updateOpinionCount();document.getElementById('auditMask').classList.add('open');
+    }
+    function closeAudit() { if(auditSubmitting)return;document.getElementById('auditMask').classList.remove('open'); }
+    function prepareReturnNodes() {
+      const options=task.status==='管理部审核'?[{value:'office',label:'片区所审核'},{value:'surveyor',label:'普查人员填报'}]:[{value:'surveyor',label:'普查人员填报'}];
+      document.getElementById('returnNode').innerHTML='<option value="">请选择退回节点</option>'+options.map(item=>`<option value="${item.value}">${item.label}</option>`).join('');
+      document.getElementById('returnNodeTip').textContent=task.status==='管理部审核'?'管理部可退回至片区所审核或普查人员填报':'片区所审核不通过时只能退回普查人员填报';
+    }
+    function toggleRejectFields() { const result=document.querySelector('input[name="result"]:checked').value, reject=result==='不通过'; document.getElementById('returnRow').style.display=reject?'block':'none'; document.getElementById('opinionLabel').classList.toggle('required',reject);if(!reject){document.getElementById('returnNode').value='';document.getElementById('returnError').textContent='';}document.getElementById('opinionError').textContent=''; }
+    function updateOpinionCount(){const value=document.getElementById('opinion').value;document.getElementById('opinionCount').textContent=`${value.length}/300`;document.getElementById('opinionError').textContent='';}
+
+    function submitAudit() {
+      if(auditSubmitting)return;
+      const result=document.querySelector('input[name="result"]:checked').value;
+      const returnNode=document.getElementById('returnNode').value;
+      const opinion=document.getElementById('opinion').value.trim();
+      document.getElementById('returnError').textContent=''; document.getElementById('opinionError').textContent='';
+      if(result==='不通过'&&!returnNode){document.getElementById('returnError').textContent='请选择返回节点';return;}
+      if(result==='不通过'&&!opinion){document.getElementById('opinionError').textContent='请输入审批意见';return;}
+      if(!canAudit()){closeAudit();showToast('任务审核状态已变化，请刷新后重试');return;}
+      auditSubmitting=true;const role=document.getElementById('roleSelect').value,originalStatus=task.status,time=nowText();const targetMap={office:{label:'片区所审核',status:'所长审核'},surveyor:{label:'普查人员填报',status:'进行中'}};const target=targetMap[returnNode];
+      const comment=result==='通过'?(opinion||'审核通过。'):`退回至${target.label}。退回原因：${opinion}`;
+      task.timeline.unshift({title:result==='通过'?`${originalStatus}通过`:`${originalStatus}退回`,person:role,time,result,comment});
+      task.operationLogs=task.operationLogs||[];task.operationLogs.unshift({type:'审核',level:originalStatus,result,from:originalStatus,to:result==='通过'?(originalStatus==='所长审核'?'管理部审核':'任务结束'):target.label,opinion,operator:role,time});
+      if(result==='通过') { task.status=originalStatus==='所长审核'?'管理部审核':'已结束';task.auditStatus=task.status==='已结束'?'通过':'待审核'; }
+      else { task.status=target.status;task.auditStatus='已退回';task.returnNode=target.label; }
+      task.updatedAt=time;auditSubmitting=false;
+      closeAudit();renderBase();showToast(result==='通过'?(task.status==='已结束'?'管理部审核已通过，任务已结束':'片区所审核已通过，任务进入管理部审核'):`任务已退回至${target.label}，审批记录已更新`);
+    }
+
+    function updateLinks() {
+      const planPayload=encodeURIComponent(JSON.stringify(plan));
+      const taskPayload=encodeURIComponent(JSON.stringify(task));
+      const source=params.get('source');
+      const url=source==='office'?`area-survey-office-tasks.html?taskUpdate=${taskPayload}`:source==='surveyor'?`area-survey-surveyor-tasks.html?taskUpdate=${taskPayload}`:`area-survey-plan-detail.html?data=${planPayload}&taskUpdate=${taskPayload}`;
+      document.getElementById('backToPlan').href=url; document.getElementById('returnBtn').href=url; document.getElementById('planBreadcrumb').href=url;
+      if(source==='office') document.getElementById('planBreadcrumb').textContent='我的面积普查任务（片区所）';
+      if(source==='surveyor') document.getElementById('planBreadcrumb').textContent='我的面积普查任务（普查人员）';
+    }
+    function showToast(message) { clearTimeout(toastTimer);const toast=document.getElementById('toast');toast.textContent=message;toast.classList.add('show');toastTimer=setTimeout(()=>toast.classList.remove('show'),2300); }
+
+    document.getElementById('roleSelect').value=task.status==='所长审核'?'片区所所长':'管理部审核人员';
+    document.getElementById('roleSelect').addEventListener('change',updateAuditButton);
+    document.addEventListener('keydown',event=>{if(event.key==='Escape'){closeAudit();closePreview();closePdfPreview();closeBuildingDetail();}});
+    renderBase();
+    if(params.get('audit')==='1'&&canAudit())openAudit();
+  </script>
+</body>
+</html>

@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>新建普查计划</title>
+  <style>
+    :root {
+      --primary: #4c78f5;
+      --primary-hover: #3a65d9;
+      --primary-soft: #f0f5ff;
+      --primary-border: #d6e4ff;
+      --success: #389e0d;
+      --warning: #d48806;
+      --danger: #ff4d4f;
+      --text: #2c3e50;
+      --text-secondary: #5a6577;
+      --text-tertiary: #8c95a6;
+      --border: #e8ecf1;
+      --divider: #f0f2f5;
+      --page-bg: #f3f6fa;
+      --header-height: 56px;
+      --sider-width: 220px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--text);
+      background: var(--page-bg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+        "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+      font-size: 14px;
+    }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+
+    .topbar {
+      position: fixed;
+      inset: 0 0 auto 0;
+      z-index: 50;
+      height: var(--header-height);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      color: #fff;
+      background: linear-gradient(90deg, #4c78f5 0%, #4e7cf0 100%);
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    }
+    .topbar-left, .topbar-right, .topbar-control, .user { display: flex; align-items: center; }
+    .topbar-left { gap: 10px; }
+    .topbar-right { gap: 8px; }
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      color: var(--primary);
+      background: #fff;
+      border-radius: 6px;
+      font-size: 15px;
+    }
+    .system-name { font-size: 16px; font-weight: 700; }
+    .topbar-control {
+      height: 32px;
+      gap: 6px;
+      padding: 0 10px;
+      color: rgba(255,255,255,.92);
+      border: 1px solid rgba(255,255,255,.24);
+      border-radius: 6px;
+      background: rgba(255,255,255,.08);
+      font-size: 13px;
+    }
+    .env-badge {
+      height: 24px;
+      padding: 0 8px;
+      color: #ad6800;
+      background: #fff7e6;
+      border: 1px solid #ffd591;
+      border-radius: 4px;
+      line-height: 22px;
+      font-size: 12px;
+    }
+    .user { gap: 8px; margin-left: 4px; }
+    .avatar {
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      color: var(--primary);
+      background: #fff;
+      border-radius: 50%;
+      font-size: 13px;
+    }
+
+    .sider {
+      position: fixed;
+      top: var(--header-height);
+      bottom: 0;
+      left: 0;
+      z-index: 30;
+      width: var(--sider-width);
+      color: var(--text-secondary);
+      background: #fff;
+      border-right: 1px solid var(--border);
+    }
+    .menu { padding: 12px 8px; }
+    .menu-group-title, .menu-item {
+      position: relative;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      border-radius: 4px;
+      user-select: none;
+    }
+    .menu-group-title { padding: 0 14px; gap: 11px; cursor: pointer; }
+    .menu-group-title:hover, .menu-item:hover { color: var(--primary); background: #f8faff; }
+    .menu-icon { width: 20px; text-align: center; font-size: 17px; }
+    .menu-arrow { margin-left: auto; transition: transform .2s; }
+    .menu-group.collapsed .menu-arrow { transform: rotate(-90deg); }
+    .menu-group.collapsed .menu-children { display: none; }
+    .menu-item {
+      margin: 3px 0;
+      padding: 0 14px 0 46px;
+      color: var(--text-secondary);
+      text-decoration: none;
+    }
+    .menu-item.selected { color: var(--primary); background: var(--primary-soft); font-weight: 500; }
+    .menu-item.selected::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 7px;
+      bottom: 7px;
+      width: 3px;
+      background: var(--primary);
+      border-radius: 0 2px 2px 0;
+    }
+    .menu-badge {
+      min-width: 18px;
+      height: 18px;
+      margin-left: auto;
+      padding: 0 5px;
+      color: #fff;
+      background: var(--danger);
+      border-radius: 9px;
+      font-size: 11px;
+      line-height: 18px;
+      text-align: center;
+    }
+    .menu-note { margin-left: auto; color: var(--text-tertiary); font-size: 12px; }
+
+    main {
+      min-width: 1080px;
+      min-height: 100vh;
+      margin-left: var(--sider-width);
+      padding: calc(var(--header-height) + 20px) 24px 92px;
+    }
+    .breadcrumb { margin-bottom: 12px; color: var(--text-tertiary); font-size: 13px; }
+    .breadcrumb a { color: var(--text-secondary); text-decoration: none; }
+    .breadcrumb a:hover { color: var(--primary); }
+    .page-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .back-link { color: var(--text-secondary); text-decoration: none; font-size: 18px; }
+    h1 { margin: 0; font-size: 18px; font-weight: 600; }
+    .subtitle { margin-top: 5px; color: var(--text-tertiary); font-size: 12px; }
+
+    .card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.04);
+    }
+    .card-header {
+      min-height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      border-bottom: 1px solid var(--divider);
+    }
+    .card-title { font-size: 15px; font-weight: 600; }
+    .card-body { padding: 20px; }
+    .form-grid { display: grid; grid-template-columns: repeat(3, minmax(260px, 1fr)); gap: 24px; }
+    .form-item label { display: block; margin-bottom: 8px; color: var(--text-secondary); font-size: 13px; }
+    .required::before { content: "*"; margin-right: 4px; color: var(--danger); }
+    .control {
+      width: 100%;
+      height: 36px;
+      padding: 0 11px;
+      color: var(--text);
+      background: #fff;
+      border: 1px solid #d9dee7;
+      border-radius: 6px;
+      outline: 0;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .control::placeholder { color: #b8bfc9; }
+    .control:hover { border-color: var(--primary); }
+    .control:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(76,120,245,.10); }
+    .control.error { border-color: var(--danger); }
+    .error-text { min-height: 18px; margin-top: 5px; color: var(--danger); font-size: 12px; }
+
+    .range-section { margin-top: 22px; }
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .section-title { display: flex; align-items: baseline; gap: 10px; font-size: 15px; font-weight: 600; }
+    .selected-count { color: var(--text-tertiary); font-size: 12px; font-weight: 400; }
+    .range-error { margin-left: 12px; color: var(--danger); font-size: 12px; font-weight: 400; }
+    .btn {
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 15px;
+      color: var(--text-secondary);
+      background: #fff;
+      border: 1px solid #d9dee7;
+      border-radius: 6px;
+      text-decoration: none;
+      transition: all .2s;
+    }
+    .btn:hover { color: var(--primary); border-color: var(--primary); }
+    .btn-primary { color: #fff; border-color: var(--primary); background: var(--primary); }
+    .btn-primary:hover { color: #fff; border-color: var(--primary-hover); background: var(--primary-hover); }
+    .btn-warning { color: #fff; border-color: #e9a23b; background: #e9a23b; }
+    .btn-warning:hover { color: #fff; border-color: #d48806; background: #d48806; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-icon { margin-right: 6px; }
+    .btn-outline-primary { color: var(--primary); border-color: var(--primary-border); background: #fff; }
+
+    .empty-range {
+      min-height: 360px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      color: var(--text-tertiary);
+      border: 1px dashed #c9cfd8;
+      border-radius: 6px;
+      background: #fff;
+    }
+    .empty-icon { margin-bottom: 12px; color: #c7ccd4; font-size: 50px; }
+    .empty-title { color: var(--text-secondary); }
+    .empty-help { margin-top: 5px; font-size: 12px; }
+
+    .table-wrap { width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: 4px; }
+    table { width: 100%; min-width: 1040px; border-collapse: collapse; table-layout: fixed; }
+    th, td {
+      height: 46px;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    th { height: 44px; color: var(--text-secondary); background: #fafbfc; font-size: 13px; font-weight: 600; }
+    td { color: var(--text); font-size: 13px; }
+    tbody tr:hover { background: #f8faff; }
+    tbody tr:last-child td { border-bottom: 0; }
+    .checkbox-col { width: 48px; text-align: center; }
+    .code-col { width: 130px; }
+    .name-col { width: 150px; }
+    .district-col { width: 100px; }
+    .office-col { width: 150px; }
+    .address-col { width: 260px; }
+    .last-col { width: 130px; text-align: center; }
+    .action-col { width: 90px; }
+    .link { padding: 0; color: var(--primary); background: none; border: 0; text-decoration: none; }
+    .link:hover { color: var(--primary-hover); }
+    .link.danger { color: var(--danger); }
+
+    .bottom-bar {
+      position: fixed;
+      left: var(--sider-width);
+      right: 0;
+      bottom: 0;
+      z-index: 40;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 0 24px;
+      background: rgba(255,255,255,.98);
+      border-top: 1px solid var(--border);
+      box-shadow: 0 -2px 8px rgba(0,0,0,.04);
+    }
+
+    .modal-mask {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(0,0,0,.45);
+    }
+    .modal-mask.open { display: flex; }
+    .modal {
+      width: min(1240px, calc(100vw - 48px));
+      max-height: calc(100vh - 48px);
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 12px 36px rgba(0,0,0,.18);
+    }
+    .modal-header {
+      min-height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-title { font-size: 16px; font-weight: 600; }
+    .modal-selected { margin-left: auto; margin-right: 18px; color: var(--text-tertiary); font-size: 13px; }
+    .close { padding: 0; color: var(--text-tertiary); background: none; border: 0; font-size: 23px; }
+    .modal-body { padding: 18px 20px 0; overflow: auto; }
+    .selector-filters {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(190px, 1fr)) auto;
+      gap: 16px;
+      align-items: center;
+      padding: 14px 16px;
+      background: #fafbfc;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+    }
+    .filter-item { display: grid; grid-template-columns: max-content 1fr; align-items: center; gap: 8px; }
+    .filter-item label { color: var(--text-secondary); font-size: 13px; white-space: nowrap; }
+    .filter-actions { display: flex; gap: 8px; }
+    .selector-actions { display: flex; align-items: center; justify-content: space-between; margin: 14px 0; }
+    .cycle-tip { color: var(--text-tertiary); font-size: 12px; }
+    .pagination-row {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 0 4px;
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+    .pages { display: flex; gap: 6px; }
+    .page-btn {
+      min-width: 32px;
+      height: 32px;
+      padding: 0 8px;
+      color: var(--text-secondary);
+      background: #fff;
+      border: 1px solid #d9dee7;
+      border-radius: 6px;
+    }
+    .page-btn.active { color: #fff; background: var(--primary); border-color: var(--primary); }
+    .page-btn:disabled { color: #b8bfc9; cursor: not-allowed; }
+    .modal-footer {
+      min-height: 62px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 0 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .small-modal { width: 420px; }
+    .small-modal .modal-body { padding: 20px 24px; color: var(--text-secondary); line-height: 1.7; }
+    .toast {
+      position: fixed;
+      top: 72px;
+      left: 50%;
+      z-index: 200;
+      padding: 10px 16px;
+      color: var(--text);
+      background: #fff;
+      border-radius: 6px;
+      box-shadow: 0 6px 22px rgba(0,0,0,.16);
+      opacity: 0;
+      transform: translate(-50%, -10px);
+      pointer-events: none;
+      transition: all .2s;
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    @media (max-width: 1280px) {
+      .form-grid { grid-template-columns: repeat(2, minmax(260px, 1fr)); }
+      .selector-filters { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-left"><span class="brand-mark">普</span><span class="system-name">面积普查与检查管理系统</span></div>
+    <div class="topbar-right">
+      <button class="topbar-control">面积业务系统 <span>⌄</span></button>
+      <button class="topbar-control">管理部 <span>⌄</span></button>
+      <span class="env-badge">演示环境</span>
+      <div class="user"><span class="avatar">管</span><span>管理部用户</span><span>⌄</span></div>
+    </div>
+  </header>
+
+  <aside class="sider">
+    <nav class="menu" aria-label="系统菜单">
+      <section class="menu-group" id="surveyMenu">
+        <div class="menu-group-title" onclick="toggleMenu('surveyMenu')"><span class="menu-icon">▦</span><span>面积普查</span><span class="menu-badge">5</span><span class="menu-arrow">⌄</span></div>
+        <div class="menu-children"><a class="menu-item selected" href="area-survey-plan-list.html">面积普查任务管理</a><a class="menu-item" href="area-survey-station-details.html">面积普查站点明细</a><a class="menu-item" href="area-survey-offnetwork-stats.html">未在网建筑物统计</a><a class="menu-item" href="area-survey-office-tasks.html">我的面积普查任务（片区所）</a><a class="menu-item" href="area-survey-surveyor-tasks.html">我的面积普查任务（普查人员）</a></div>
+      </section>
+      <section class="menu-group collapsed" id="inspectionMenu">
+        <div class="menu-group-title" onclick="toggleMenu('inspectionMenu')"><span class="menu-icon">✓</span><span>面积检查</span><span class="menu-arrow">⌄</span></div>
+        <div class="menu-children"><div class="menu-item" title="后续接入面积检查页面">面积检查任务管理<span class="menu-note">待接入</span></div></div>
+      </section>
+    </nav>
+  </aside>
+
+  <main>
+    <div class="breadcrumb"><a href="area-survey-plan-list.html">首页</a>&nbsp;&nbsp;/&nbsp;&nbsp;<a href="area-survey-plan-list.html">面积普查任务管理</a>&nbsp;&nbsp;/&nbsp;&nbsp;<span id="breadcrumbTitle">新建普查计划</span></div>
+    <div class="page-heading">
+      <a class="back-link" href="area-survey-plan-list.html" title="返回计划列表">←</a>
+      <div><h1 id="pageTitle">新建普查计划</h1><div class="subtitle">填写基础信息并配置本次普查范围</div></div>
+    </div>
+
+    <section class="card">
+      <div class="card-header"><div class="card-title">计划信息</div><span class="selected-count">草稿允许暂存未填写完整的信息</span></div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="form-item">
+            <label class="required" for="taskName">任务名称</label>
+            <input id="taskName" class="control" maxlength="60" placeholder="请输入任务名称" />
+            <div class="error-text" id="taskNameError"></div>
+          </div>
+          <div class="form-item">
+            <label class="required" for="surveyType">普查类型</label>
+            <select id="surveyType" class="control">
+              <option value="">请选择普查类型</option>
+              <option>自管站</option><option>用户站</option><option>对公户</option>
+            </select>
+            <div class="error-text" id="surveyTypeError"></div>
+          </div>
+          <div class="form-item">
+            <label class="required" for="surveyYear">普查年度</label>
+            <select id="surveyYear" class="control">
+              <option value="">请选择普查年度</option>
+              <option selected>2026年</option><option>2027年</option><option>2025年</option>
+            </select>
+            <div class="error-text" id="surveyYearError"></div>
+          </div>
+        </div>
+
+        <div class="range-section">
+          <div class="section-header">
+            <div class="section-title">普查范围 <span class="selected-count" id="rangeCount">已选 0 项</span><span class="range-error" id="rangeError"></span></div>
+            <button class="btn btn-primary" onclick="openStationSelector()"><span class="btn-icon">＋</span>添加普查站点</button>
+          </div>
+          <div id="selectedRange"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="bottom-bar">
+    <button class="btn" onclick="attemptCancel()">取消</button>
+    <button class="btn btn-warning" onclick="savePlan('草稿')">暂存</button>
+    <button class="btn btn-primary" onclick="savePlan('创建成功')">创建计划</button>
+  </div>
+
+  <div class="modal-mask" id="stationMask">
+    <section class="modal" role="dialog" aria-modal="true" aria-label="站点选择器">
+      <div class="modal-header"><div class="modal-title">站点选择器</div><div class="modal-selected" id="modalSelectedCount">已选 0 项</div><button class="close" onclick="closeStationSelector()">×</button></div>
+      <div class="modal-body">
+        <div class="selector-filters">
+          <div class="filter-item"><label for="deptFilter">所属管理部</label><select id="deptFilter" class="control"><option value="">全部</option></select></div>
+          <div class="filter-item"><label for="officeFilter">所属片区所</label><select id="officeFilter" class="control"><option value="">全部</option></select></div>
+          <div class="filter-item"><label for="stationKeyword">站点名称/编码</label><input id="stationKeyword" class="control" placeholder="请输入名称或编码" /></div>
+          <div class="filter-item"><label for="lastYearFilter">上一年度是否普查</label><select id="lastYearFilter" class="control"><option value="">全部</option><option value="yes">是</option><option value="no">否</option></select></div>
+          <div class="filter-actions"><button class="btn btn-primary" onclick="searchStations()">搜索</button><button class="btn" onclick="resetStationFilters()">重置</button></div>
+        </div>
+        <div class="selector-actions">
+          <button class="btn btn-outline-primary" onclick="selectUnsurveyedLastYear()">一键选择上一年度未普查站点</button>
+          <span class="cycle-tip">面积普查以两年为周期；上一年度已普查站点仍允许手动选择</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th class="checkbox-col"><input id="selectPage" type="checkbox" aria-label="选择当前页全部站点" /></th>
+              <th class="code-col">换热站编码</th><th class="name-col">换热站名称</th><th class="district-col">行政区</th>
+              <th class="office-col">所属片区所</th><th class="address-col">用热地址</th><th class="last-col">上一年度是否普查</th>
+            </tr></thead>
+            <tbody id="stationTableBody"></tbody>
+          </table>
+        </div>
+        <div class="pagination-row"><span id="stationTotal">共 0 个项目</span><div class="pages" id="stationPages"></div><span>10条/页</span></div>
+      </div>
+      <div class="modal-footer"><button class="btn" onclick="closeStationSelector()">取消</button><button class="btn btn-primary" onclick="commitStations()">添加</button></div>
+    </section>
+  </div>
+
+  <div class="modal-mask" id="leaveMask">
+    <section class="modal small-modal" role="dialog" aria-modal="true" aria-label="未保存内容提示">
+      <div class="modal-header"><div class="modal-title">离开新建页面</div><button class="close" onclick="closeLeaveConfirm()">×</button></div>
+      <div class="modal-body">当前存在未保存的修改，离开后这些内容将丢失。是否继续返回计划列表？</div>
+      <div class="modal-footer"><button class="btn" onclick="closeLeaveConfirm()">继续编辑</button><button class="btn btn-primary" onclick="leavePage()">确认离开</button></div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const PLAN_KEY = 'areaSurveyPlans';
+    const TASK_KEY = 'areaSurveyTasks';
+    const departments = {
+      '裕华管理部': ['裕华片区所', '槐底片区所'],
+      '长安管理部': ['长安片区所', '谈固片区所'],
+      '桥西管理部': ['桥西片区所', '新石片区所'],
+      '新华管理部': ['新华片区所', '联盟片区所']
+    };
+    const districts = ['裕华区', '长安区', '桥西区', '新华区'];
+    const stationNames = ['春江花月西站', '金域蓝湾站', '盛世长安站', '恒大华府站', '和平家园站', '新石小区站', '联盟小区站', '槐安路站'];
+    const stationData = Array.from({ length: 38 }, (_, index) => {
+      const deptNames = Object.keys(departments);
+      const dept = deptNames[index % deptNames.length];
+      const office = departments[dept][index % 2];
+      return {
+        id: `station-${index + 1}`,
+        code: `60218B${String(index + 1).padStart(3, '0')}`,
+        name: `${stationNames[index % stationNames.length]}${index > 7 ? index + 1 : ''}`,
+        department: dept,
+        office,
+        district: districts[index % districts.length],
+        address: `石家庄市${districts[index % districts.length]}示范路${88 + index}号`,
+        lastYearSurveyed: index % 3 !== 0
+      };
+    });
+
+    let selectedStationIds = new Set();
+    let modalSelection = new Set();
+    let filteredStations = [...stationData];
+    let stationPage = 1;
+    const stationPageSize = 10;
+    let dirty = false;
+    let toastTimer;
+    const editId = new URLSearchParams(location.search).get('id');
+    let editingPlan = null;
+
+    function toggleMenu(id) { document.getElementById(id).classList.toggle('collapsed'); }
+
+    function readPlans() {
+      try { return JSON.parse(localStorage.getItem(PLAN_KEY) || '[]'); }
+      catch (error) { return []; }
+    }
+
+    function readTasks() {
+      try { return JSON.parse(localStorage.getItem(TASK_KEY) || '[]'); }
+      catch (error) { return []; }
+    }
+
+    function formatDateTime(date = new Date()) {
+      const pad = value => String(value).padStart(2, '0');
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+    }
+
+    function renderSelectedRange() {
+      const selected = stationData.filter(item => selectedStationIds.has(item.id));
+      document.getElementById('rangeCount').textContent = `已选 ${selected.length} 项`;
+      const container = document.getElementById('selectedRange');
+      if (!selected.length) {
+        container.innerHTML = `<div class="empty-range"><div class="empty-icon">▤</div><div class="empty-title">尚未添加普查站点，请点击上方按钮进行配置</div><div class="empty-help">创建计划时至少需要选择一个站点</div></div>`;
+        return;
+      }
+      container.innerHTML = `<div class="table-wrap"><table><thead><tr>
+        <th class="code-col">换热站编码</th><th class="name-col">换热站名称</th><th class="district-col">行政区</th>
+        <th class="office-col">所属片区所</th><th class="address-col">用热地址</th><th class="last-col">上一年度是否普查</th><th class="action-col">操作</th>
+      </tr></thead><tbody>${selected.map(item => `<tr>
+        <td>${item.code}</td><td title="${item.name}">${item.name}</td><td>${item.district}</td><td>${item.office}</td>
+        <td title="${item.address}">${item.address}</td><td class="last-col">${item.lastYearSurveyed ? '是' : '否'}</td>
+        <td><button class="link danger" onclick="removeStation('${item.id}')">移除</button></td>
+      </tr>`).join('')}</tbody></table></div>`;
+    }
+
+    function removeStation(id) {
+      selectedStationIds.delete(id);
+      dirty = true;
+      renderSelectedRange();
+    }
+
+    function initFilterOptions() {
+      const dept = document.getElementById('deptFilter');
+      dept.innerHTML = '<option value="">全部</option>' + Object.keys(departments).map(item => `<option>${item}</option>`).join('');
+      updateOfficeOptions();
+    }
+
+    function updateOfficeOptions() {
+      const dept = document.getElementById('deptFilter').value;
+      const offices = dept ? departments[dept] : Object.values(departments).flat();
+      document.getElementById('officeFilter').innerHTML = '<option value="">全部</option>' + offices.map(item => `<option>${item}</option>`).join('');
+    }
+
+    function openStationSelector() {
+      modalSelection = new Set(selectedStationIds);
+      stationPage = 1;
+      searchStations();
+      document.getElementById('stationMask').classList.add('open');
+    }
+
+    function closeStationSelector() { document.getElementById('stationMask').classList.remove('open'); }
+
+    function getStationFilters() {
+      return {
+        dept: document.getElementById('deptFilter').value,
+        office: document.getElementById('officeFilter').value,
+        keyword: document.getElementById('stationKeyword').value.trim().toLowerCase(),
+        lastYear: document.getElementById('lastYearFilter').value
+      };
+    }
+
+    function searchStations() {
+      const filters = getStationFilters();
+      filteredStations = stationData.filter(item =>
+        (!filters.dept || item.department === filters.dept) &&
+        (!filters.office || item.office === filters.office) &&
+        (!filters.keyword || item.name.toLowerCase().includes(filters.keyword) || item.code.toLowerCase().includes(filters.keyword)) &&
+        (!filters.lastYear || (filters.lastYear === 'yes') === item.lastYearSurveyed)
+      );
+      stationPage = 1;
+      renderStationTable();
+    }
+
+    function resetStationFilters() {
+      document.getElementById('deptFilter').value = '';
+      updateOfficeOptions();
+      document.getElementById('officeFilter').value = '';
+      document.getElementById('stationKeyword').value = '';
+      document.getElementById('lastYearFilter').value = '';
+      searchStations();
+    }
+
+    function renderStationTable() {
+      const totalPages = Math.max(1, Math.ceil(filteredStations.length / stationPageSize));
+      stationPage = Math.min(stationPage, totalPages);
+      const pageData = filteredStations.slice((stationPage - 1) * stationPageSize, stationPage * stationPageSize);
+      document.getElementById('stationTableBody').innerHTML = pageData.length ? pageData.map(item => `<tr>
+        <td class="checkbox-col"><input type="checkbox" ${modalSelection.has(item.id) ? 'checked' : ''} onchange="toggleStation('${item.id}', this.checked)" /></td>
+        <td>${item.code}</td><td title="${item.name}">${item.name}</td><td>${item.district}</td><td>${item.office}</td>
+        <td title="${item.address}">${item.address}</td><td class="last-col">${item.lastYearSurveyed ? '是' : '否'}</td>
+      </tr>`).join('') : `<tr><td colspan="7" style="height:160px;text-align:center;color:#8c95a6">暂无符合筛选条件的站点</td></tr>`;
+      const allPageSelected = pageData.length > 0 && pageData.every(item => modalSelection.has(item.id));
+      document.getElementById('selectPage').checked = allPageSelected;
+      document.getElementById('stationTotal').textContent = `共 ${filteredStations.length} 个项目`;
+      document.getElementById('modalSelectedCount').textContent = `已选 ${modalSelection.size} 项`;
+      renderStationPages(totalPages);
+    }
+
+    function renderStationPages(totalPages) {
+      const pages = [];
+      for (let page = 1; page <= totalPages; page++) pages.push(page);
+      document.getElementById('stationPages').innerHTML = `
+        <button class="page-btn" ${stationPage === 1 ? 'disabled' : ''} onclick="goStationPage(${stationPage - 1})">‹</button>
+        ${pages.map(page => `<button class="page-btn ${page === stationPage ? 'active' : ''}" onclick="goStationPage(${page})">${page}</button>`).join('')}
+        <button class="page-btn" ${stationPage === totalPages ? 'disabled' : ''} onclick="goStationPage(${stationPage + 1})">›</button>`;
+    }
+
+    function goStationPage(page) {
+      const totalPages = Math.max(1, Math.ceil(filteredStations.length / stationPageSize));
+      stationPage = Math.min(Math.max(page, 1), totalPages);
+      renderStationTable();
+    }
+
+    function toggleStation(id, checked) {
+      checked ? modalSelection.add(id) : modalSelection.delete(id);
+      document.getElementById('modalSelectedCount').textContent = `已选 ${modalSelection.size} 项`;
+      const pageData = filteredStations.slice((stationPage - 1) * stationPageSize, stationPage * stationPageSize);
+      document.getElementById('selectPage').checked = pageData.length > 0 && pageData.every(item => modalSelection.has(item.id));
+    }
+
+    function toggleCurrentPage(checked) {
+      const pageData = filteredStations.slice((stationPage - 1) * stationPageSize, stationPage * stationPageSize);
+      pageData.forEach(item => checked ? modalSelection.add(item.id) : modalSelection.delete(item.id));
+      renderStationTable();
+    }
+
+    function selectUnsurveyedLastYear() {
+      const candidates = filteredStations.filter(item => !item.lastYearSurveyed);
+      candidates.forEach(item => modalSelection.add(item.id));
+      renderStationTable();
+      showToast(`已选择当前筛选范围内 ${candidates.length} 个上一年度未普查站点`);
+    }
+
+    function commitStations() {
+      selectedStationIds = new Set(modalSelection);
+      dirty = true;
+      document.getElementById('rangeError').textContent = '';
+      renderSelectedRange();
+      closeStationSelector();
+      showToast(`已添加 ${selectedStationIds.size} 个普查站点`);
+    }
+
+    function clearErrors() {
+      ['taskName', 'surveyType', 'surveyYear'].forEach(id => document.getElementById(id).classList.remove('error'));
+      ['taskNameError', 'surveyTypeError', 'surveyYearError', 'rangeError'].forEach(id => document.getElementById(id).textContent = '');
+    }
+
+    function validateForCreate() {
+      clearErrors();
+      let valid = true;
+      const rules = [
+        ['taskName', 'taskNameError', '请输入任务名称'],
+        ['surveyType', 'surveyTypeError', '请选择普查类型'],
+        ['surveyYear', 'surveyYearError', '请选择普查年度']
+      ];
+      rules.forEach(([fieldId, errorId, message]) => {
+        if (!document.getElementById(fieldId).value.trim()) {
+          document.getElementById(fieldId).classList.add('error');
+          document.getElementById(errorId).textContent = message;
+          valid = false;
+        }
+      });
+      if (!selectedStationIds.size) {
+        document.getElementById('rangeError').textContent = '请至少选择一个普查站点';
+        valid = false;
+      }
+      return valid;
+    }
+
+    function savePlan(status) {
+      if (status === '创建成功' && !validateForCreate()) {
+        showToast('计划信息未填写完整，请检查标红内容');
+        return;
+      }
+      const plans = readPlans();
+      const existing = editingPlan || plans.find(item => String(item.id) === String(editId));
+      const ids = [...selectedStationIds];
+      const selected = stationData.filter(item => selectedStationIds.has(item.id));
+      const departmentSet = [...new Set(selected.map(item => item.department))];
+      const plan = {
+        id: editId || `plan-${Date.now()}`,
+        name: document.getElementById('taskName').value.trim() || '未命名普查计划',
+        department: departmentSet.length === 0 ? '待确认' : departmentSet.length === 1 ? departmentSet[0] : '多个管理部',
+        type: document.getElementById('surveyType').value || '待确认',
+        year: document.getElementById('surveyYear').value || '待确认',
+        status,
+        completed: existing?.completed || 0,
+        total: ids.length,
+        changedSites: existing?.changedSites || 0,
+        stationIds: ids,
+        stations: selected.map(item => ({ ...item })),
+        createdAt: existing?.createdAt || formatDateTime(),
+        updatedAt: formatDateTime()
+      };
+      const nextPlans = plans.filter(item => String(item.id) !== String(plan.id));
+      nextPlans.unshift(plan);
+      localStorage.setItem(PLAN_KEY, JSON.stringify(nextPlans));
+
+      if (status === '创建成功') {
+        const tasks = readTasks().filter(item => String(item.planId) !== String(plan.id));
+        selected.forEach(station => tasks.push({
+          id: `task-${plan.id}-${station.id}`,
+          planId: plan.id,
+          planName: plan.name,
+          stationId: station.id,
+          stationCode: station.code,
+          stationName: station.name,
+          status: '待分配',
+          createdAt: formatDateTime()
+        }));
+        localStorage.setItem(TASK_KEY, JSON.stringify(tasks));
+      }
+      dirty = false;
+      const payload = encodeURIComponent(JSON.stringify(plan));
+      location.href = `area-survey-plan-list.html?saved=${status === '草稿' ? 'draft' : 'created'}&data=${payload}`;
+    }
+
+    function loadEditPlan() {
+      if (!editId) return;
+      const incoming = new URLSearchParams(location.search).get('data');
+      let plan = null;
+      if (incoming) {
+        try { plan = JSON.parse(incoming); }
+        catch (error) { plan = null; }
+      }
+      if (!plan) plan = readPlans().find(item => String(item.id) === String(editId));
+      if (!plan && /^\d+$/.test(editId)) {
+        const index = Number(editId) - 1;
+        if (index >= 0 && index < 27) {
+          plan = {
+            name: `${2026 - (index % 3)}年面积普查计划${String(index + 1).padStart(2, '0')}`,
+            type: ['用户站', '自管站', '对公户'][index % 3],
+            year: ['2026年', '2027年', '2025年'][index % 3],
+            stationIds: []
+          };
+        }
+      }
+      if (!plan) return;
+      if (plan.type === '部分报停') plan.type = '对公户';
+      editingPlan = plan;
+      document.getElementById('taskName').value = plan.name === '未命名普查计划' ? '' : plan.name;
+      document.getElementById('surveyType').value = plan.type === '待确认' ? '' : plan.type;
+      document.getElementById('surveyYear').value = plan.year === '待确认' ? '' : plan.year;
+      selectedStationIds = new Set(plan.stationIds || []);
+      document.getElementById('pageTitle').textContent = '编辑普查计划';
+      document.getElementById('breadcrumbTitle').textContent = '编辑普查计划';
+      document.title = '编辑普查计划';
+      renderSelectedRange();
+    }
+
+    function attemptCancel() {
+      dirty ? document.getElementById('leaveMask').classList.add('open') : leavePage();
+    }
+    function closeLeaveConfirm() { document.getElementById('leaveMask').classList.remove('open'); }
+    function leavePage() { dirty = false; location.href = 'area-survey-plan-list.html'; }
+
+    function showToast(message) {
+      clearTimeout(toastTimer);
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 2400);
+    }
+
+    document.getElementById('deptFilter').addEventListener('change', () => { updateOfficeOptions(); document.getElementById('officeFilter').value = ''; });
+    document.getElementById('stationKeyword').addEventListener('keydown', event => { if (event.key === 'Enter') searchStations(); });
+    document.getElementById('selectPage').addEventListener('change', event => toggleCurrentPage(event.target.checked));
+    ['taskName', 'surveyType', 'surveyYear'].forEach(id => document.getElementById(id).addEventListener('input', () => { dirty = true; }));
+    window.addEventListener('beforeunload', event => { if (dirty) { event.preventDefault(); event.returnValue = ''; } });
+    document.addEventListener('keydown', event => { if (event.key === 'Escape') { closeStationSelector(); closeLeaveConfirm(); } });
+
+    initFilterOptions();
+    renderSelectedRange();
+    loadEditPlan();
+  </script>
+</body>
+</html>

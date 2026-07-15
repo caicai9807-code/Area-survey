@@ -1,0 +1,14 @@
+.corporate-report-page .attachment-no { margin-bottom:4px; font-size:14px; }
+.corporate-info { grid-template-columns:repeat(3,1fr); }
+.corporate-info span:nth-child(1),
+.corporate-info span:nth-child(4),
+.corporate-info span:nth-child(5) { grid-column:span 2; }
+.corporate-report-table th,
+.corporate-report-table td { height:31px; font-size:10px; }
+.corporate-summary { grid-template-columns:86px 1fr 1fr 180px; }
+.document-list { grid-template-rows:repeat(3,1fr); }
+.station-card .descriptions { grid-template-columns:repeat(4,minmax(0,1fr)); }
+.station-card .desc-item.full { grid-column:span 2; }
+@media (max-width:1600px) {
+  .station-card .descriptions { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}

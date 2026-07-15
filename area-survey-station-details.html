@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>面积普查站点明细</title>
+  <link rel="stylesheet" href="area-survey-detail.css" />
+  <link rel="stylesheet" href="area-survey-station-details.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-left"><span class="brand-mark">普</span><span class="system-name">面积普查与检查管理系统</span></div>
+    <div class="topbar-right"><button class="topbar-control">面积业务系统⌄</button><select id="roleSelect" class="role-select" onchange="changeRole(this.value)"><option value="planning">计划经营部人员</option><option value="department">管理部人员</option><option value="office">片区所人员</option><option value="surveyor">普查人员</option></select><span class="env-badge">演示环境</span><div class="user"><span class="avatar" id="currentAvatar">计</span><span id="currentUser">赵经理</span><span>⌄</span></div></div>
+  </header>
+  <aside class="sider"><nav class="menu"><section><div class="menu-group-title"><span class="menu-icon">▦</span><span>面积普查</span><span class="menu-badge">5</span><span class="menu-arrow">⌄</span></div><a class="menu-item" href="area-survey-plan-list.html">面积普查任务管理</a><a class="menu-item selected" href="area-survey-station-details.html">面积普查站点明细</a><a class="menu-item" href="area-survey-offnetwork-stats.html">未在网建筑物统计</a><a class="menu-item" href="area-survey-office-tasks.html">我的面积普查任务（片区所）</a><a class="menu-item" href="area-survey-surveyor-tasks.html">我的面积普查任务（普查人员）</a></section><section><div class="menu-group-title"><span class="menu-icon">✓</span><span>面积检查</span><span class="menu-arrow">⌄</span></div><div class="menu-item">面积检查任务管理<span class="menu-note">待接入</span></div></section></nav></aside>
+
+  <main>
+    <div class="breadcrumb"><a href="area-survey-plan-list.html">面积普查</a>&nbsp;&nbsp;/&nbsp;&nbsp;面积普查站点明细</div>
+    <div class="page-heading"><div><h1>面积普查站点明细</h1><div class="subtitle">汇总展示权限范围内所有面积普查任务的站点级进度和完成结果</div></div><div class="heading-actions"><span class="scope-tag" id="scopeTag">数据范围：全部管理部</span></div></div>
+
+    <div class="station-layout">
+      <section class="card org-card">
+        <div class="card-header"><span class="card-title">组织机构</span><button class="link" onclick="resetTree()">重置</button></div>
+        <div class="org-search"><input id="treeSearch" placeholder="搜索管理部或片区所" oninput="renderTree()" /><span>⌕</span></div>
+        <div class="tree-tip" id="treeTip">仅展示当前角色的数据权限范围</div>
+        <div class="org-tree" id="orgTree"></div>
+      </section>
+
+      <div class="station-main">
+        <section class="card filter-card">
+          <div class="station-filters">
+            <div class="filter-item required"><label for="yearFilter">普查年度</label><select id="yearFilter" class="control"><option>2026年</option><option>2027年</option><option>2025年</option></select></div>
+            <div class="filter-item"><label for="codeFilter">换热站编码</label><input id="codeFilter" class="control" placeholder="请输入换热站编码" /></div>
+            <div class="filter-item"><label for="nameFilter">换热站名称</label><input id="nameFilter" class="control" placeholder="请输入换热站名称" /></div>
+            <div class="filter-item"><label for="statusFilter">普查状态</label><select id="statusFilter" class="control"><option value="">全部</option><option>待普查</option><option>普查中</option><option>所长审核</option><option>管理部审核</option><option>已退回</option><option>普查完成</option></select></div>
+            <div class="filter-item"><label for="typeFilter">站点类型</label><select id="typeFilter" class="control"><option value="">全部</option><option>自管站</option><option>用户站</option><option>对公户</option></select></div>
+            <div class="filter-item year-range"><label>建筑年代</label><div><input id="yearStart" class="control" type="number" min="1900" max="2100" placeholder="开始年份" /><span>—</span><input id="yearEnd" class="control" type="number" min="1900" max="2100" placeholder="结束年份" /></div></div>
+            <div class="filter-item date-range"><label>普查完成时间</label><div><input id="dateStart" class="control" type="date" /><span>—</span><input id="dateEnd" class="control" type="date" /></div></div>
+            <div class="filter-actions"><button class="btn btn-primary" onclick="searchStations()">查询</button><button class="btn" onclick="resetFilters()">重置</button></div>
+          </div>
+        </section>
+
+        <section class="card station-table-card">
+          <div class="card-header table-toolbar"><div><span class="card-title">站点明细</span><span class="header-count" id="resultCount">共 0 项</span></div><div class="toolbar-actions"><span id="selectedHint">已选择 0 项</span><button id="batchSyncBtn" class="btn" disabled onclick="openBatchSync()">↻ 批量同步</button></div></div>
+          <div class="card-body">
+            <div class="table-wrap station-table-wrap"><table><thead><tr><th class="check-cell"><input id="selectAll" type="checkbox" onchange="toggleAll(this.checked)" /></th><th style="width:60px">序号</th><th style="width:130px">换热站编码</th><th style="width:150px">换热站名称</th><th style="width:105px" class="center">普查状态</th><th style="width:120px">管理部</th><th style="width:125px">片区所</th><th style="width:88px">站点类型</th><th style="width:140px">办事处</th><th style="width:235px">用热地址</th><th style="width:100px">建筑年代</th><th style="width:120px" class="number">原面积（m²）</th><th style="width:120px" class="number">现面积（m²）</th><th style="width:105px" class="number">面积变化率</th><th style="width:145px" class="number">居民面积变化（m²）</th><th style="width:155px" class="number">非居民面积变化（m²）</th><th style="width:145px">普查人员</th><th style="width:165px">普查完成时间</th><th class="operation-cell" style="width:175px">操作</th></tr></thead><tbody id="stationBody"></tbody></table></div>
+            <div id="emptyState" class="empty-state" hidden><div class="empty-icon">□</div><div>未找到符合条件的站点</div><button class="btn" onclick="resetFilters()">清空筛选条件</button></div>
+            <div class="pagination-row"><span id="totalText">共 0 个项目</span><div class="pages" id="pages"></div><span>10条/页</span></div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <div class="modal-mask" id="syncMask"><div class="modal sync-modal"><div class="modal-header"><span id="syncTitle">同步站点信息</span><button onclick="closeSync()">×</button></div><div class="modal-body"><div class="sync-icon">↻</div><h3 id="syncHeading">确认同步站点最新普查信息吗？</h3><p id="syncDescription">同步将更新站点基础信息、普查状态、建筑年代、普查人员和完成时间，不覆盖人工填报中的业务数据。</p><div class="sync-list" id="syncList"></div></div><div class="modal-footer"><button class="btn" onclick="closeSync()">取消</button><button class="btn btn-primary" id="confirmSyncBtn" onclick="confirmSync()">确认同步</button></div></div></div>
+  <div class="modal-mask" id="resultMask"><div class="modal result-modal"><div class="modal-header"><span>批量同步结果</span><button onclick="closeResult()">×</button></div><div class="modal-body"><div class="result-summary"><span class="result-ok">✓ <b id="successCount">0</b> 条成功</span><span class="result-fail">! <b id="failCount">0</b> 条失败</span></div><div id="failureList" class="failure-list"></div></div><div class="modal-footer"><button class="btn btn-primary" onclick="closeResult()">完成</button></div></div></div>
+  <div class="modal-mask" id="returnMask"><div class="modal return-modal"><div class="modal-header"><div><span>退回站点</span><small>仅计划经营部人员可操作</small></div><button onclick="closeReturnModal()">×</button></div><div class="modal-body"><div class="return-station"><span>退回站点</span><strong id="returnStation">—</strong></div><div class="return-form"><label><span><i>*</i>退回到哪一级</span><select id="returnLevel" class="control" onchange="updateReturnHint()"><option value="">请选择退回节点</option><option value="surveyor">普查人员填报</option><option value="office">片区所审核</option><option value="department">管理部审核</option></select><small id="returnLevelHint">请选择退回后负责处理的业务节点</small><em id="returnLevelError"></em></label><label><span><i>*</i>退回原因</span><textarea id="returnReason" class="textarea" maxlength="300" placeholder="请说明退回原因，便于责任人修改后重新提交" oninput="updateReturnReasonCount()"></textarea><div class="reason-meta"><em id="returnReasonError"></em><small id="returnReasonCount">0/300</small></div></label></div></div><div class="modal-footer"><button class="btn" onclick="closeReturnModal()">取消</button><button class="btn btn-danger" id="confirmReturnBtn" onclick="confirmReturn()">确认退回</button></div></div></div>
+  <div class="toast" id="toast"></div>
+  <script src="area-survey-station-details.js"></script>
+</body>
+</html>

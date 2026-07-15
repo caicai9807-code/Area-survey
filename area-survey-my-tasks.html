@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>我的面积普查任务</title>
+  <meta http-equiv="refresh" content="0; url=area-survey-office-tasks.html" />
+  <link rel="stylesheet" href="area-survey-detail.css" />
+  <style>
+    .scope-alert { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:16px; padding:11px 14px; color:#0958d9; background:#e6f4ff; border:1px solid #91caff; border-radius:6px; }
+    .scope-alert strong { font-weight:600; }
+    .scope-meta { color:#5a6577; font-size:12px; }
+    .tabs-card { margin-top:16px; }
+    .task-tabs { display:flex; gap:30px; height:50px; padding:0 20px; border-bottom:1px solid var(--border); }
+    .task-tab { position:relative; display:flex; align-items:center; gap:7px; padding:0 3px; color:var(--text-secondary); background:none; border:0; }
+    .task-tab.active { color:var(--primary); font-weight:500; }
+    .task-tab.active::after { content:""; position:absolute; left:0; right:0; bottom:-1px; height:2px; background:var(--primary); }
+    .count-badge { min-width:20px; height:18px; padding:0 6px; color:var(--text-tertiary); background:#f0f2f5; border-radius:9px; font-size:11px; line-height:18px; }
+    .task-tab.active .count-badge { color:var(--primary); background:var(--primary-soft); }
+    .assignee-list { display:flex; flex-wrap:wrap; gap:6px; }
+    .person-tag { display:inline-flex; align-items:center; gap:5px; height:24px; padding:0 8px; color:#0958d9; background:#e6f4ff; border:1px solid #91caff; border-radius:4px; font-size:12px; }
+    .person-tag button { padding:0; color:#8c95a6; background:none; border:0; }
+    .disabled-link { color:#b8bfc9; cursor:not-allowed; }
+    .disabled-link:hover { color:#b8bfc9; }
+    .person-options { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:12px; }
+    .person-option { display:flex; align-items:center; gap:8px; padding:10px 12px; border:1px solid var(--border); border-radius:6px; }
+    .person-option:hover { border-color:var(--primary-border); background:#f8faff; }
+    .selected-persons { min-height:44px; display:flex; align-items:center; flex-wrap:wrap; gap:8px; padding:6px 10px; border:1px solid #d9dee7; border-radius:6px; }
+    .confirm-text { color:var(--text-secondary); line-height:1.8; }
+    .operation-cell { white-space:nowrap; }
+    .operation-cell .link + .link { margin-left:8px; padding-left:8px; }
+    @media (max-width:1400px) { .filters { grid-template-columns:repeat(2,1fr); } }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-left"><span class="brand-mark">普</span><span class="system-name">面积普查与检查管理系统</span></div>
+    <div class="topbar-right">
+      <button class="topbar-control">面积业务系统⌄</button>
+      <select id="roleSelect" class="role-select" aria-label="角色切换"><option>片区所所长</option><option>片区所普通人员</option><option>普查人员</option></select>
+      <span class="env-badge">演示环境</span><div class="user"><span class="avatar" id="avatar">所</span><span id="userName">桥西片区所所长</span><span>⌄</span></div>
+    </div>
+  </header>
+
+  <aside class="sider">
+    <nav class="menu"><section><div class="menu-group-title"><span class="menu-icon">▦</span><span>面积普查</span><span class="menu-badge">5</span><span class="menu-arrow">⌄</span></div><a class="menu-item" href="area-survey-plan-list.html">面积普查任务管理</a><a class="menu-item" href="area-survey-station-details.html">面积普查站点明细</a><a class="menu-item" href="area-survey-offnetwork-stats.html">未在网建筑物统计</a><a class="menu-item selected" href="area-survey-my-tasks.html">我的面积普查任务</a></section><section><div class="menu-group-title"><span class="menu-icon">✓</span><span>面积检查</span><span class="menu-arrow">⌄</span></div><div class="menu-item">面积检查任务管理<span class="menu-note">待接入</span></div></section></nav>
+  </aside>
+
+  <main>
+    <div class="breadcrumb"><a href="area-survey-plan-list.html">面积普查</a>&nbsp;&nbsp;/&nbsp;&nbsp;我的面积普查任务</div>
+    <div class="page-heading"><div><h1>我的面积普查任务</h1><div class="subtitle">根据当前角色查看和处理本片区普查任务</div></div></div>
+    <div class="scope-alert"><div><strong id="scopeTitle">片区所任务视图</strong><span id="scopeText">：查看桥西片区所全部任务，可设置人员、下发和查看详情。</span></div><span class="scope-meta" id="scopeMeta">数据范围：桥西片区所</span></div>
+
+    <section class="card">
+      <div class="filters">
+        <div class="filter-item"><label for="codeFilter">换热站编码</label><input id="codeFilter" class="control" placeholder="请输入换热站编码" /></div>
+        <div class="filter-item"><label for="nameFilter">换热站名称</label><input id="nameFilter" class="control" placeholder="请输入换热站名称" /></div>
+        <div class="filter-item"><label for="officeFilter">所属片区所</label><select id="officeFilter" class="control" disabled><option>桥西片区所</option></select></div>
+        <div class="filter-item"><label for="auditFilter">审核状态</label><select id="auditFilter" class="control"><option value="">全部</option><option>未上报</option><option>待审核</option><option>已上报</option><option>通过</option><option>已退回</option></select></div>
+        <div class="filter-actions"><button class="btn btn-primary" onclick="searchTasks()">搜索</button><button class="btn" onclick="resetFilters()">重置</button></div>
+      </div>
+    </section>
+
+    <section class="card tabs-card">
+      <div class="task-tabs" id="taskTabs"></div>
+      <div class="card-body">
+        <div class="table-wrap"><table>
+          <thead><tr><th style="width:55px">序号</th><th style="width:115px">换热站编码</th><th style="width:145px">换热站名称</th><th style="width:220px">用热地址</th><th style="width:125px">所属管理部</th><th style="width:130px">所属片区所</th><th style="width:88px">所属年度</th><th style="width:95px" class="center">状态</th><th style="width:95px" class="center">下发状态</th><th style="width:95px" class="center">审核状态</th><th style="width:150px">最近操作时间</th><th style="width:245px">操作</th></tr></thead>
+          <tbody id="taskBody"></tbody>
+        </table></div>
+        <div id="emptyState" class="empty-state" style="display:none"><div class="empty-icon">□</div><div id="emptyText">暂无任务</div></div>
+        <div class="pagination-row"><span id="totalText"></span><div class="pages" id="pages"></div><span>10条/页</span></div>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal-mask" id="personMask">
+    <section class="modal" role="dialog" aria-modal="true" aria-label="普查人员选择">
+      <div class="modal-header"><div class="modal-title">普查人员选择</div><button class="close" onclick="closePersonModal()">×</button></div>
+      <div class="modal-body">
+        <div class="form-row"><label class="required">普查人员</label><div class="selected-persons" id="selectedPersons"></div><div class="field-error" id="personError"></div></div>
+        <div class="form-row"><label for="personSearch">选择人员</label><input id="personSearch" class="control" placeholder="搜索姓名" oninput="renderPersonOptions()" /><div class="person-options" id="personOptions"></div></div>
+      </div>
+      <div class="modal-footer"><button class="btn" onclick="closePersonModal()">取消</button><button class="btn btn-primary" onclick="saveAssignees()">保存</button></div>
+    </section>
+  </div>
+
+  <div class="modal-mask" id="dispatchMask">
+    <section class="modal" style="width:460px" role="dialog" aria-modal="true" aria-label="下发任务确认">
+      <div class="modal-header"><div class="modal-title" id="dispatchModalTitle">下发普查任务</div><button class="close" onclick="closeDispatchConfirm()">×</button></div>
+      <div class="modal-body"><div class="confirm-text" id="dispatchText"></div></div>
+      <div class="modal-footer"><button class="btn" onclick="closeDispatchConfirm()">取消</button><button class="btn btn-primary" onclick="confirmDispatch()">确认下发</button></div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const currentSurveyor = '张三';
+    const people = ['张三','李晨晨','王海','赵敏','刘洋','孙琪'];
+    const taskTypes = ['自管站','用户站','对公户'];
+    const statusPool = ['待分配','进行中','所长审核','管理部审核','已结束','已退回'];
+    const auditPool = ['未上报','已上报','待审核','待审核','通过','已退回'];
+    let tasks = Array.from({length:24},(_,index)=>{
+      const assigned = index % 4 === 0 ? [] : index % 3 === 0 ? ['张三','李晨晨'] : index % 3 === 1 ? ['李晨晨'] : ['张三'];
+      const dispatched = index % 5 !== 0 && assigned.length > 0;
+      return {
+        id:`my-task-${index+1}`, type:taskTypes[index%3], code:`60218B${String(index+1).padStart(3,'0')}`,
+        name:['春江花月西站','金域蓝湾站','盛世长安站','恒大华府站','和平家园站','新石小区站'][index%6]+(index>5?index+1:''),
+        address:`石家庄市桥西区新石中路${118+index}号`, department:'桥西管理部', office:'桥西片区所', year:index%2?'2027年':'2026年',
+        status:statusPool[index%statusPool.length], dispatchStatus:dispatched?'已下发':'未下发', auditStatus:auditPool[index%auditPool.length],
+        assignees:assigned, updatedAt:`2026-07-${String(14-index%9).padStart(2,'0')} ${String(9+index%8).padStart(2,'0')}:43:23`
+      };
+    });
+    let activeType='自管站', filteredTasks=[], currentPage=1, currentTaskId=null, tempAssignees=new Set(), dispatchMode='dispatch', toastTimer;
+    const pageSize=10;
+
+    function tag(status) { const map={'待分配':'orange','进行中':'blue','所长审核':'blue','管理部审核':'blue','已结束':'gray','已退回':'red','未下发':'gray','已下发':'green','未上报':'gray','已上报':'blue','待审核':'orange','通过':'green'};return `<span class="tag tag-${map[status]||'gray'}">${status}</span>`; }
+    function role() { return document.getElementById('roleSelect').value; }
+    function isSurveyor() { return role()==='普查人员'; }
+    function isHead() { return role()==='片区所所长'; }
+
+    function visibleTasks() {
+      return tasks.filter(task=>task.type===activeType).filter(task=>!isSurveyor()||(task.dispatchStatus==='已下发'&&task.assignees.includes(currentSurveyor)));
+    }
+    function applyFilters() {
+      const code=document.getElementById('codeFilter').value.trim().toLowerCase(),name=document.getElementById('nameFilter').value.trim().toLowerCase(),audit=document.getElementById('auditFilter').value;
+      filteredTasks=visibleTasks().filter(task=>(!code||task.code.toLowerCase().includes(code))&&(!name||task.name.toLowerCase().includes(name))&&(!audit||task.auditStatus===audit));
+    }
+
+    function renderTabs() {
+      document.getElementById('taskTabs').innerHTML=taskTypes.map(type=>{const count=tasks.filter(task=>task.type===type).filter(task=>!isSurveyor()||(task.dispatchStatus==='已下发'&&task.assignees.includes(currentSurveyor))).length;return `<button class="task-tab ${type===activeType?'active':''}" onclick="switchType('${type}')">${type}<span class="count-badge">${count}</span></button>`;}).join('');
+    }
+    function switchType(type){activeType=type;currentPage=1;applyFilters();renderAll();}
+
+    function renderAll(){renderRoleScope();renderTabs();renderTable();}
+    function renderRoleScope(){
+      const surveyor=isSurveyor();
+      document.getElementById('scopeTitle').textContent=surveyor?'普查人员个人任务视图':'片区所任务视图';
+      document.getElementById('scopeText').textContent=surveyor?`：仅展示已分配给${currentSurveyor}且已下发的任务。`:'：查看桥西片区所全部任务，可设置人员、下发和查看详情。';
+      document.getElementById('scopeMeta').textContent=surveyor?`当前普查人员：${currentSurveyor}`:'数据范围：桥西片区所';
+      document.getElementById('userName').textContent=surveyor?currentSurveyor:role()==='片区所所长'?'桥西片区所所长':'桥西片区所人员';
+      document.getElementById('avatar').textContent=surveyor?'普':'所';
+    }
+
+    function taskContext(task){const station={id:task.id,code:task.code,name:task.name,department:task.department,office:task.office,district:'桥西区',address:task.address};return encodeURIComponent(JSON.stringify({plan:{id:'my-plan',name:`${task.year}${task.type}普查计划`,year:task.year,type:task.type,status:'创建成功'},task:{id:task.id,status:task.status,auditStatus:task.auditStatus,updatedAt:task.updatedAt,surveyors:task.assignees.join('、')||'待分配',station,timeline:[]}}));}
+    function actions(task){
+      const detail=`<a class="link" href="area-survey-task-detail.html?data=${taskContext(task)}">详情</a>`;
+      if(isSurveyor()){
+        const editable=['待分配','进行中','已退回'].includes(task.status);
+        const fill=editable?`<button class="link" onclick="showToast('已进入${task.name}填报流程')">填报</button>`:'';
+        const report=editable?`<button class="link" onclick="reportTask('${task.id}')">上报</button>`:'';
+        const withdraw=task.status==='所长审核'?`<button class="link" onclick="withdrawTask('${task.id}')">撤回</button>`:'';
+        return detail+fill+report+withdraw;
+      }
+      const set=`<button class="link" onclick="openPersonModal('${task.id}')">设置普查人员</button>`;
+      const canDispatch=task.assignees.length>0&&task.dispatchStatus==='未下发';
+      const dispatch=canDispatch?`<button class="link" onclick="openDispatchConfirm('${task.id}')">下发</button>`:`<button class="link disabled-link" title="${task.dispatchStatus==='已下发'?'任务已下发':'请先设置普查人员'}">下发</button>`;
+      const audit=isHead()&&task.status==='所长审核'&&task.auditStatus==='待审核'?`<a class="link" href="area-survey-task-detail.html?data=${taskContext(task)}&audit=1">审核</a>`:`<span class="link disabled-link" title="${isHead()?'仅普查人员上报后的所长审核任务可操作':'仅片区所所长可以审核'}">审核</span>`;
+      return set+dispatch+detail+audit;
+    }
+
+    function renderTable(){
+      const totalPages=Math.max(1,Math.ceil(filteredTasks.length/pageSize));currentPage=Math.min(currentPage,totalPages);const start=(currentPage-1)*pageSize,pageData=filteredTasks.slice(start,start+pageSize);
+      document.getElementById('taskBody').innerHTML=pageData.map((task,index)=>`<tr><td>${start+index+1}</td><td>${task.code}</td><td title="${task.name}">${task.name}</td><td title="${task.address}">${task.address}</td><td>${task.department}</td><td>${task.office}</td><td>${task.year}</td><td class="center">${tag(task.status)}</td><td class="center">${tag(task.dispatchStatus)}</td><td class="center">${tag(task.auditStatus)}</td><td>${task.updatedAt}</td><td class="operation-cell">${actions(task)}</td></tr>`).join('');
+      document.getElementById('emptyState').style.display=pageData.length?'none':'block';document.getElementById('emptyText').textContent=isSurveyor()?'暂无分配给您的已下发任务':'暂无符合条件的任务';document.getElementById('totalText').textContent=`共 ${filteredTasks.length} 个项目`;
+      document.getElementById('pages').innerHTML=Array.from({length:totalPages},(_,i)=>i+1).map(page=>`<button class="page-btn ${page===currentPage?'active':''}" onclick="goPage(${page})">${page}</button>`).join('');
+    }
+    function goPage(page){currentPage=page;renderTable();}
+    function searchTasks(){currentPage=1;applyFilters();renderTable();}
+    function resetFilters(){document.getElementById('codeFilter').value='';document.getElementById('nameFilter').value='';document.getElementById('auditFilter').value='';currentPage=1;applyFilters();renderTable();}
+
+    function openPersonModal(id){currentTaskId=id;const task=tasks.find(item=>item.id===id);tempAssignees=new Set(task.assignees);document.getElementById('personSearch').value='';document.getElementById('personError').textContent='';renderSelectedPersons();renderPersonOptions();document.getElementById('personMask').classList.add('open');}
+    function closePersonModal(){document.getElementById('personMask').classList.remove('open');}
+    function renderSelectedPersons(){const container=document.getElementById('selectedPersons');container.innerHTML=tempAssignees.size?[...tempAssignees].map(name=>`<span class="person-tag">${name}<button onclick="togglePerson('${name}',false)">×</button></span>`).join(''):'<span style="color:#b8bfc9">请选择至少一名普查人员</span>';}
+    function renderPersonOptions(){const keyword=document.getElementById('personSearch').value.trim();document.getElementById('personOptions').innerHTML=people.filter(name=>!keyword||name.includes(keyword)).map(name=>`<label class="person-option"><input type="checkbox" ${tempAssignees.has(name)?'checked':''} onchange="togglePerson('${name}',this.checked)"/>${name}</label>`).join('');}
+    function togglePerson(name,checked){checked?tempAssignees.add(name):tempAssignees.delete(name);renderSelectedPersons();renderPersonOptions();}
+    function saveAssignees(){
+      if(!tempAssignees.size){document.getElementById('personError').textContent='请选择至少一名普查人员';return;}
+      const task=tasks.find(item=>item.id===currentTaskId);
+      if(task.dispatchStatus==='已下发'){
+        dispatchMode='reassign';closePersonModal();document.getElementById('dispatchModalTitle').textContent='重新设置普查人员';
+        document.getElementById('dispatchText').innerHTML=`任务“${task.name}”已经下发。确认将普查人员调整为 <strong>${[...tempAssignees].join('、')}</strong> 吗？<br/>保存后，未被选中的人员将无法继续看到该任务。`;
+        document.getElementById('dispatchMask').classList.add('open');return;
+      }
+      commitAssignees(task);
+    }
+    function commitAssignees(task){task.assignees=[...tempAssignees];task.updatedAt=nowText();closePersonModal();applyFilters();renderAll();showToast('普查人员设置成功，请下发后通知对应人员');}
+
+    function openDispatchConfirm(id){currentTaskId=id;dispatchMode='dispatch';const task=tasks.find(item=>item.id===id);if(!task.assignees.length||task.dispatchStatus==='已下发')return;document.getElementById('dispatchModalTitle').textContent='下发普查任务';document.getElementById('dispatchText').innerHTML=`确认将“${task.name}”下发给 <strong>${task.assignees.join('、')}</strong> 吗？<br/>下发后，对应普查人员可在本页面看到该任务。`;document.getElementById('dispatchMask').classList.add('open');}
+    function closeDispatchConfirm(){document.getElementById('dispatchMask').classList.remove('open');}
+    function confirmDispatch(){const task=tasks.find(item=>item.id===currentTaskId);if(dispatchMode==='reassign'){task.assignees=[...tempAssignees];task.updatedAt=nowText();closeDispatchConfirm();applyFilters();renderAll();showToast('普查人员已调整，任务可见范围已同步更新');return;}task.dispatchStatus='已下发';task.status='进行中';task.auditStatus='未上报';task.updatedAt=nowText();closeDispatchConfirm();applyFilters();renderAll();showToast('任务已下发，仅被选中的普查人员可以查看');}
+
+    function reportTask(id){const task=tasks.find(item=>item.id===id);task.status='所长审核';task.auditStatus='待审核';task.updatedAt=nowText();applyFilters();renderAll();showToast('任务已上报，所长审核前可以撤回');}
+    function withdrawTask(id){const task=tasks.find(item=>item.id===id);task.status='进行中';task.auditStatus='未上报';task.updatedAt=nowText();applyFilters();renderAll();showToast('任务已撤回，可以继续修改并重新上报');}
+    function nowText(){const d=new Date(),p=v=>String(v).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;}
+    function showToast(message){clearTimeout(toastTimer);const toast=document.getElementById('toast');toast.textContent=message;toast.classList.add('show');toastTimer=setTimeout(()=>toast.classList.remove('show'),2300);}
+
+    document.getElementById('roleSelect').addEventListener('change',()=>{currentPage=1;applyFilters();renderAll();});
+    document.addEventListener('keydown',event=>{if(event.key==='Escape'){closePersonModal();closeDispatchConfirm();}});
+    applyFilters();renderAll();
+  </script>
+</body>
+</html>

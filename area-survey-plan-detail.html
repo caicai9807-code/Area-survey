@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>普查计划详情</title>
+  <link rel="stylesheet" href="area-survey-detail.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-left"><span class="brand-mark">普</span><span class="system-name">面积普查与检查管理系统</span></div>
+    <div class="topbar-right">
+      <button class="topbar-control">面积业务系统⌄</button>
+      <select id="roleSelect" class="role-select" aria-label="角色切换">
+        <option>管理部审核人员</option><option>片区所所长</option><option>普查员</option><option>只读用户</option>
+      </select>
+      <span class="env-badge">演示环境</span><div class="user"><span class="avatar">管</span><span>管理部用户</span><span>⌄</span></div>
+    </div>
+  </header>
+
+  <aside class="sider">
+    <nav class="menu"><section><div class="menu-group-title"><span class="menu-icon">▦</span><span>面积普查</span><span class="menu-badge">5</span><span class="menu-arrow">⌄</span></div><a class="menu-item selected" href="area-survey-plan-list.html">面积普查任务管理</a><a class="menu-item" href="area-survey-station-details.html">面积普查站点明细</a><a class="menu-item" href="area-survey-offnetwork-stats.html">未在网建筑物统计</a><a class="menu-item" href="area-survey-office-tasks.html">我的面积普查任务（片区所）</a><a class="menu-item" href="area-survey-surveyor-tasks.html">我的面积普查任务（普查人员）</a></section><section><div class="menu-group-title"><span class="menu-icon">✓</span><span>面积检查</span><span class="menu-arrow">⌄</span></div><div class="menu-item">面积检查任务管理<span class="menu-note">待接入</span></div></section></nav>
+  </aside>
+
+  <main>
+    <div class="breadcrumb"><a id="breadcrumbList" href="area-survey-plan-list.html">面积普查任务管理</a>&nbsp;&nbsp;/&nbsp;&nbsp;计划详情</div>
+    <div class="page-heading">
+      <div class="heading-left"><a id="backToList" class="back-link" href="area-survey-plan-list.html">←</a><div><h1 id="pageTitle">普查计划详情</h1><div class="subtitle">查看计划信息及计划内普查任务</div></div></div>
+      <div class="heading-actions"><span id="planStatus"></span><a id="editPlanBtn" class="btn" href="area-survey-plan-create.html" style="display:none">编辑计划</a></div>
+    </div>
+
+    <section class="card">
+      <div class="card-header"><div class="card-title">计划基础信息</div></div>
+      <div class="card-body">
+        <div class="descriptions" id="planDescriptions"></div>
+        <div class="stats-grid" id="planStats"></div>
+      </div>
+    </section>
+
+    <section class="card" id="taskSection">
+      <div class="card-header"><div class="card-title" id="sectionTitle">普查任务列表</div><span id="taskHint" style="color:var(--text-tertiary);font-size:12px"></span></div>
+      <div id="draftRange" class="card-body" style="display:none"></div>
+      <div id="taskContent">
+        <div class="filters">
+          <div class="filter-item"><label for="codeFilter">换热站编码</label><input id="codeFilter" class="control" placeholder="请输入编码" /></div>
+          <div class="filter-item"><label for="nameFilter">换热站名称</label><input id="nameFilter" class="control" placeholder="请输入名称" /></div>
+          <div class="filter-item"><label for="officeFilter">所属片区所</label><select id="officeFilter" class="control"><option value="">全部</option></select></div>
+          <div class="filter-item"><label for="auditFilter">审核状态</label><select id="auditFilter" class="control"><option value="">全部</option><option>未上报</option><option>待审核</option><option>已上报</option><option>通过</option><option>已退回</option></select></div>
+          <div class="filter-actions"><button class="btn btn-primary" onclick="searchTasks()">搜索</button><button class="btn" onclick="resetFilters()">重置</button></div>
+        </div>
+        <div class="card-body" style="padding-top:0">
+          <div class="table-wrap"><table>
+            <thead><tr><th style="width:58px">序号</th><th style="width:120px">换热站编码</th><th style="width:150px">换热站名称</th><th style="width:230px">用热地址</th><th style="width:130px">所属管理部</th><th style="width:140px">所属片区所</th><th style="width:90px">所属年度</th><th style="width:105px" class="center">任务状态</th><th style="width:100px" class="center">审核状态</th><th style="width:160px">更新时间</th><th style="width:120px" class="action-column">操作</th></tr></thead>
+            <tbody id="taskTableBody"></tbody>
+          </table></div>
+          <div id="taskEmpty" class="empty-state" style="display:none"><div class="empty-icon">□</div>暂无符合条件的普查任务</div>
+          <div class="pagination-row"><span id="taskTotal"></span><div class="pages" id="taskPages"></div><span>10条/页</span></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const rawPlan = params.get('data');
+    let plan = rawPlan ? JSON.parse(rawPlan) : { id: 'demo', name: '2026年面积普查计划', department: '桥西管理部', type: '自管站', year: '2026年', status: '创建成功', total: 12, completed: 2, changedSites: 3, createdAt: '2026-07-14 10:20:08' };
+    if (plan.type === '部分报停') plan.type = '对公户';
+    const offices = ['裕华片区所', '槐底片区所', '长安片区所', '谈固片区所', '桥西片区所', '新石片区所', '新华片区所', '联盟片区所'];
+    const districts = ['裕华区', '长安区', '桥西区', '新华区'];
+    const stationNames = ['春江花月西站', '金域蓝湾站', '盛世长安站', '恒大华府站', '和平家园站', '新石小区站', '联盟小区站', '槐安路站'];
+    let tasks = [];
+    let filteredTasks = [];
+    let currentPage = 1;
+    const pageSize = 10;
+    let toastTimer;
+
+    function tag(status) {
+      const map = { '草稿':'orange', '创建成功':'green', '待分配':'orange', '进行中':'blue', '所长审核':'blue', '管理部审核':'blue', '已结束':'gray', '已退回':'red', '待审核':'orange', '未上报':'gray', '已上报':'blue', '通过':'green' };
+      return `<span class="tag tag-${map[status] || 'gray'}">${status}</span>`;
+    }
+
+    function normalizeStation(item, index) {
+      return {
+        id: item.id || `station-${index + 1}`,
+        code: item.code || `60218B${String(index + 1).padStart(3,'0')}`,
+        name: item.name || stationNames[index % stationNames.length],
+        department: item.department || plan.department || '桥西管理部',
+        office: item.office || offices[index % offices.length],
+        district: item.district || districts[index % districts.length],
+        address: item.address || `石家庄市${districts[index % districts.length]}示范路${88 + index}号`
+      };
+    }
+
+    function getStations() {
+      if (plan.stations?.length) return plan.stations.map(normalizeStation);
+      const count = Math.max(4, Number(plan.total) || 12);
+      return Array.from({ length: count }, (_, index) => normalizeStation({}, index));
+    }
+
+    function buildTasks() {
+      const statuses = ['管理部审核', '所长审核', '进行中', '已结束', '待分配', '已退回'];
+      tasks = getStations().map((station, index) => {
+        const status = statuses[index % statuses.length];
+        const auditStatus = status === '已结束' ? '通过' : status === '已退回' ? '已退回' : status.includes('审核') ? '待审核' : status === '进行中' ? '已上报' : '未上报';
+        return {
+          id: `task-${plan.id}-${station.id}`,
+          planId: plan.id,
+          station,
+          status,
+          auditStatus,
+          updatedAt: `2026-07-${String(14 - (index % 8)).padStart(2,'0')} ${String(9 + index % 9).padStart(2,'0')}:30:08`,
+          surveyors: index % 2 ? '李晨晨、王海' : '张三、李晨晨',
+          timeline: []
+        };
+      });
+      const updateRaw = params.get('taskUpdate');
+      if (updateRaw) {
+        try {
+          const updated = JSON.parse(updateRaw);
+          tasks = tasks.map(item => item.id === updated.id ? updated : item);
+        } catch (error) { showToast('任务更新数据读取失败'); }
+      }
+      filteredTasks = [...tasks];
+      plan.total = tasks.length;
+      plan.completed = tasks.filter(item => item.status === '已结束').length;
+      plan.changedSites = plan.changedSites || tasks.filter((_, index) => index % 4 === 0).length;
+    }
+
+    function renderPlan() {
+      document.getElementById('pageTitle').textContent = plan.name || '普查计划详情';
+      document.getElementById('planStatus').innerHTML = tag(plan.status);
+      document.getElementById('planDescriptions').innerHTML = [
+        ['计划名称', plan.name || '待确认'], ['普查类型', plan.type || '待确认'], ['普查年度', plan.year || '待确认'],
+        ['所属管理部', plan.department || '待确认'], ['创建时间', plan.createdAt || '待确认'], ['计划状态', tag(plan.status)]
+      ].map(([label,value]) => `<div class="desc-item"><span class="desc-label">${label}：</span><span class="desc-value">${value}</span></div>`).join('');
+      document.getElementById('planStats').innerHTML = [
+        ['普查任务总数', plan.total || 0, '项'], ['已完成任务', plan.completed || 0, '项'], ['进行中任务', Math.max(0,(plan.total || 0) - (plan.completed || 0)), '项'], ['面积变化站点', plan.changedSites || 0, '个']
+      ].map(([label,value,unit]) => `<div class="stat-card"><div class="stat-label">${label}</div><div class="stat-value">${value}<span class="stat-unit">${unit}</span></div></div>`).join('');
+      const payload = encodeURIComponent(JSON.stringify(plan));
+      document.getElementById('backToList').href = `area-survey-plan-list.html?data=${payload}`;
+      document.getElementById('breadcrumbList').href = `area-survey-plan-list.html?data=${payload}`;
+      if (plan.status === '草稿') {
+        const edit = document.getElementById('editPlanBtn');
+        edit.style.display = 'inline-flex';
+        edit.href = `area-survey-plan-create.html?id=${encodeURIComponent(plan.id)}&data=${payload}`;
+      }
+    }
+
+    function renderDraftRange() {
+      document.getElementById('taskContent').style.display = 'none';
+      document.getElementById('draftRange').style.display = 'block';
+      document.getElementById('sectionTitle').textContent = '已选普查范围';
+      document.getElementById('taskHint').textContent = '计划尚未创建，暂未生成普查任务';
+      const stations = getStations();
+      document.getElementById('draftRange').innerHTML = stations.length ? `<div class="table-wrap"><table><thead><tr><th>换热站编码</th><th>换热站名称</th><th>所属管理部</th><th>所属片区所</th><th>用热地址</th></tr></thead><tbody>${stations.map(item => `<tr><td>${item.code}</td><td>${item.name}</td><td>${item.department}</td><td>${item.office}</td><td>${item.address}</td></tr>`).join('')}</tbody></table></div>` : `<div class="empty-state"><div class="empty-icon">□</div>尚未添加普查站点</div>`;
+    }
+
+    function canAudit(task) {
+      const role = document.getElementById('roleSelect').value;
+      return (task.status === '所长审核' && role === '片区所所长') || (task.status === '管理部审核' && role === '管理部审核人员');
+    }
+
+    function renderTasks() {
+      const start = (currentPage - 1) * pageSize;
+      const pageData = filteredTasks.slice(start, start + pageSize);
+      const body = document.getElementById('taskTableBody');
+      body.innerHTML = pageData.map((task,index) => {
+        const taskPayload = encodeURIComponent(JSON.stringify({ plan, task }));
+        const detailUrl = `area-survey-task-detail.html?data=${taskPayload}`;
+        return `<tr><td>${start + index + 1}</td><td>${task.station.code}</td><td title="${task.station.name}">${task.station.name}</td><td title="${task.station.address}">${task.station.address}</td><td>${task.station.department}</td><td>${task.station.office}</td><td>${plan.year}</td><td class="center">${tag(task.status)}</td><td class="center">${tag(task.auditStatus)}</td><td>${task.updatedAt}</td><td class="action-column"><a class="link" href="${detailUrl}">详情</a>${canAudit(task) ? `<a class="link" href="${detailUrl}&audit=1">审核</a>` : ''}</td></tr>`;
+      }).join('');
+      document.getElementById('taskEmpty').style.display = pageData.length ? 'none' : 'block';
+      document.getElementById('taskTotal').textContent = `共 ${filteredTasks.length} 个项目`;
+      renderPages();
+    }
+
+    function renderPages() {
+      const total = Math.max(1, Math.ceil(filteredTasks.length / pageSize));
+      currentPage = Math.min(currentPage,total);
+      document.getElementById('taskPages').innerHTML = Array.from({length:total},(_,i)=>i+1).map(page => `<button class="page-btn ${page===currentPage?'active':''}" onclick="goPage(${page})">${page}</button>`).join('');
+    }
+    function goPage(page) { currentPage = page; renderTasks(); }
+
+    function searchTasks() {
+      const code = document.getElementById('codeFilter').value.trim().toLowerCase();
+      const name = document.getElementById('nameFilter').value.trim().toLowerCase();
+      const office = document.getElementById('officeFilter').value;
+      const audit = document.getElementById('auditFilter').value;
+      filteredTasks = tasks.filter(task => (!code || task.station.code.toLowerCase().includes(code)) && (!name || task.station.name.toLowerCase().includes(name)) && (!office || task.station.office === office) && (!audit || task.auditStatus === audit));
+      currentPage = 1;
+      renderTasks();
+    }
+    function resetFilters() { ['codeFilter','nameFilter'].forEach(id=>document.getElementById(id).value=''); ['officeFilter','auditFilter'].forEach(id=>document.getElementById(id).value=''); filteredTasks=[...tasks]; currentPage=1; renderTasks(); }
+
+    function showToast(message) { clearTimeout(toastTimer); const toast=document.getElementById('toast'); toast.textContent=message; toast.classList.add('show'); toastTimer=setTimeout(()=>toast.classList.remove('show'),2200); }
+
+    document.getElementById('officeFilter').innerHTML = '<option value="">全部</option>' + offices.map(item=>`<option>${item}</option>`).join('');
+    document.getElementById('roleSelect').addEventListener('change', renderTasks);
+    buildTasks();
+    renderPlan();
+    if (plan.status === '草稿') renderDraftRange(); else renderTasks();
+  </script>
+</body>
+</html>
