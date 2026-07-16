@@ -19,7 +19,7 @@
   </header>
 
   <aside class="sider">
-    <nav class="menu"><section><div class="menu-group-title"><span class="menu-icon">▦</span><span>面积普查</span><span class="menu-badge">5</span><span class="menu-arrow">⌄</span></div><a class="menu-item selected" href="area-survey-plan-list.html">面积普查任务管理</a><a class="menu-item" href="area-survey-station-details.html">面积普查站点明细</a><a class="menu-item" href="area-survey-offnetwork-stats.html">未在网建筑物统计</a><a class="menu-item" href="area-survey-office-tasks.html">我的面积普查任务（片区所）</a><a class="menu-item" href="area-survey-surveyor-tasks.html">我的面积普查任务（普查人员）</a></section><section><div class="menu-group-title"><span class="menu-icon">✓</span><span>面积检查</span><span class="menu-arrow">⌄</span></div><div class="menu-item">面积检查任务管理<span class="menu-note">待接入</span></div></section></nav>
+    <nav class="menu"><section><div class="menu-group-title"><span class="menu-icon">▦</span><span>面积普查</span><span class="menu-badge">7</span><span class="menu-arrow">⌄</span></div><a class="menu-item selected" href="area-survey-plan-list.html">面积普查任务管理</a><a class="menu-item" href="area-survey-outplan-list.html">计划外普查任务管理</a><a class="menu-item" href="area-survey-outplan-tasks.html">计划外普查任务</a><a class="menu-item" href="area-survey-station-details.html">面积普查站点明细</a><a class="menu-item" href="area-survey-offnetwork-stats.html">未在网建筑物统计</a><a class="menu-item" href="area-survey-office-tasks.html">我的面积普查任务（片区所）</a><a class="menu-item" href="area-survey-surveyor-tasks.html">我的面积普查任务（普查人员）</a></section><section><div class="menu-group-title"><span class="menu-icon">✓</span><span>面积检查</span><span class="menu-arrow">⌄</span></div><div class="menu-item">面积检查任务管理<span class="menu-note">待接入</span></div></section></nav>
   </aside>
 
   <main>
@@ -66,9 +66,10 @@
     const params = new URLSearchParams(location.search);
     const rawPlan = params.get('data');
     let plan = rawPlan ? JSON.parse(rawPlan) : { id: 'demo', name: '2026年面积普查计划', department: '桥西管理部', type: '自管站', year: '2026年', status: '创建成功', total: 12, completed: 2, changedSites: 3, createdAt: '2026-07-14 10:20:08' };
-    if (plan.type === '部分报停') plan.type = '对公户';
-    const offices = ['裕华片区所', '槐底片区所', '长安片区所', '谈固片区所', '桥西片区所', '新石片区所', '新华片区所', '联盟片区所'];
-    const districts = ['裕华区', '长安区', '桥西区', '新华区'];
+    if (['部分报停','\u5bf9\u516c\u6237'].includes(plan.type)) plan.type = '对公用户';
+    const allowedDepartments = new Set(['裕华管理部', '长安管理部', '桥西管理部']);
+    const offices = ['裕华片区所', '槐底片区所', '长安片区所', '谈固片区所', '桥西片区所', '新石片区所'];
+    const districts = ['裕华区', '长安区', '桥西区'];
     const stationNames = ['春江花月西站', '金域蓝湾站', '盛世长安站', '恒大华府站', '和平家园站', '新石小区站', '联盟小区站', '槐安路站'];
     let tasks = [];
     let filteredTasks = [];
@@ -94,7 +95,8 @@
     }
 
     function getStations() {
-      if (plan.stations?.length) return plan.stations.map(normalizeStation);
+      if (plan.stations) return plan.stations.filter(item => allowedDepartments.has(item.department || plan.department)).map(normalizeStation);
+      if (plan.department !== '多个管理部' && !allowedDepartments.has(plan.department)) return [];
       const count = Math.max(4, Number(plan.total) || 12);
       return Array.from({ length: count }, (_, index) => normalizeStation({}, index));
     }

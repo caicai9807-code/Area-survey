@@ -1,0 +1,28 @@
+.selected-range { min-height: 110px; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.selected-empty { display: grid; place-items: center; min-height: 110px; color: var(--tertiary); }
+.type-chip { display: inline-flex; margin-right: 5px; padding: 1px 5px; color: #1d39c4; background: #f0f5ff; border: 1px solid #adc6ff; border-radius: 3px; font-size: 11px; }
+.conflict-summary { margin-top: 10px; padding: 9px 12px; color: #ad4e00; background: #fff7e6; border: 1px solid #ffd591; border-radius: 5px; font-size: 12px; }
+.risk-note { display: block; margin-top: 3px; color: #d46b08; font-size: 11px; }
+.modal-mask { position: fixed; inset: 0; z-index: 90; display: none; align-items: center; justify-content: center; padding: 28px; background: rgba(0,0,0,.45); }
+.modal-mask.open { display: flex; }
+.modal { width: min(1120px, calc(100vw - 56px)); max-height: calc(100vh - 56px); display: flex; flex-direction: column; background: #fff; border-radius: 8px; box-shadow: 0 16px 48px rgba(0,0,0,.24); }
+.modal-header, .modal-footer { display: flex; align-items: center; padding: 0 20px; }
+.modal-header { min-height: 56px; border-bottom: 1px solid var(--border); }
+.modal-title { font-size: 16px; font-weight: 600; }
+.modal-selected { margin-left: 12px; color: var(--primary); font-size: 12px; }
+.close { margin-left: auto; padding: 4px 8px; color: var(--tertiary); background: none; border: 0; font-size: 22px; }
+.modal-body { padding: 18px 20px; overflow: auto; }
+.modal-footer { min-height: 60px; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border); }
+.modal .station-tools { grid-template-columns: 180px 180px 1fr auto; }
+.modal .station-box, .modal .station-table { max-height: 420px; }
+.task-basic-grid { grid-template-columns: minmax(300px, 1.4fr) repeat(2, minmax(220px, 1fr)); }
+
+.outplan-create-page main > .card { min-height: 560px; display: flex; flex-direction: column; }
+.outplan-create-page main > .card > .card-body { flex: 1; display: flex; flex-direction: column; }
+.outplan-create-page #selectedRange { flex: 1; min-height: 180px; }
+.outplan-create-page #selectedRange .selected-empty { height: 100%; min-height: 180px; }
+
+@media (max-width: 1180px) {
+  .task-basic-grid { grid-template-columns: 1fr 1fr; }
+  .task-basic-grid .task-name-item { grid-column: 1 / -1; }
+}

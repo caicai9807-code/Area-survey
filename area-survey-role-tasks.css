@@ -12,6 +12,7 @@
 .person-tag button { padding:0; color:#8c95a6; background:none; border:0; }
 .disabled-link { color:#b8bfc9; cursor:not-allowed; }
 .disabled-link:hover { color:#b8bfc9; }
+.source-badge { display:inline-block; margin-right:5px; padding:1px 4px; color:#531dab; background:#f9f0ff; border:1px solid #d3adf7; border-radius:3px; font-size:11px; vertical-align:1px; }
 .person-options { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:12px; }
 .person-option { display:flex; align-items:center; gap:8px; padding:10px 12px; border:1px solid var(--border); border-radius:6px; }
 .person-option:hover { border-color:var(--primary-border); background:#f8faff; }

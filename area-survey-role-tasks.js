@@ -2,7 +2,7 @@ const pageMode = document.body.dataset.mode;
 const isSurveyorPage = pageMode === 'surveyor';
 const currentSurveyor = '张三';
 const people = ['张三','李晨晨','王海','赵敏','刘洋','孙琪'];
-const taskTypes = ['自管站','用户站','对公户'];
+const taskTypes = ['自管站','用户站','对公用户'];
 const statusPool = ['待分配','进行中','所长审核','管理部审核','已结束','已退回'];
 const auditPool = ['未上报','已上报','待审核','待审核','通过','已退回'];
 const CURRENT_YEAR = '2026年';
@@ -25,9 +25,9 @@ tasks[0] = {
   status:'进行中', auditStatus:'未上报', updatedAt:'2026-07-14 10:20:36'
 };
 tasks[1] = {...tasks[1],type:'用户站',code:'33315A001',name:'河北省教育考试院服务部',address:'石家庄市桥西区红旗大街297号',assignees:['张三'],dispatchStatus:'已下发',status:'进行中',auditStatus:'未上报',initialSurvey:true,updatedAt:'2026-07-14 10:18:20'};
-tasks[2] = {...tasks[2],type:'对公户',code:'33925A001000000001Z',name:'河北保家物业服务有限公司',fullName:'河北保家物业服务有限公司',shortName:'拉菲大厦',userCard:'30000088',address:'石家庄市桥西区新石北路417号',contact:'吕经理',phone:'15350599407',assignees:['张三'],dispatchStatus:'已下发',status:'进行中',auditStatus:'未上报',initialSurvey:true,updatedAt:'2026-07-14 10:16:08'};
+tasks[2] = {...tasks[2],type:'对公用户',code:'33925A001000000001Z',name:'河北保家物业服务有限公司',fullName:'河北保家物业服务有限公司',shortName:'拉菲大厦',userCard:'30000088',address:'石家庄市桥西区新石北路417号',contact:'吕经理',phone:'15350599407',assignees:['张三'],dispatchStatus:'已下发',status:'进行中',auditStatus:'未上报',initialSurvey:true,updatedAt:'2026-07-14 10:16:08'};
 tasks[4] = {...tasks[4],type:'用户站',code:'33315A005',name:'省直机关第二用户站',assignees:['张三'],dispatchStatus:'已下发',status:'进行中',auditStatus:'未上报',initialSurvey:false,updatedAt:'2026-07-13 16:08:12'};
-tasks[5] = {...tasks[5],type:'对公户',code:'33925A001000000006Z',name:'河北恒泰商贸有限公司',fullName:'河北恒泰商贸有限公司',shortName:'恒泰商务楼',userCard:'30000126',contact:'王经理',phone:'15350599426',assignees:['张三'],dispatchStatus:'已下发',status:'进行中',auditStatus:'未上报',initialSurvey:false,updatedAt:'2026-07-13 15:22:16'};
+tasks[5] = {...tasks[5],type:'对公用户',code:'33925A001000000006Z',name:'河北恒泰商贸有限公司',fullName:'河北恒泰商贸有限公司',shortName:'恒泰商务楼',userCard:'30000126',contact:'王经理',phone:'15350599426',assignees:['张三'],dispatchStatus:'已下发',status:'进行中',auditStatus:'未上报',initialSurvey:false,updatedAt:'2026-07-13 15:22:16'};
 tasks[6] = {...tasks[6],type:'自管站',year:'2026年',assignees:['张三','李晨晨'],dispatchStatus:'已下发',status:'所长审核',auditStatus:'待审核',updatedAt:'2026-07-14 11:28:46'};
 
 try {

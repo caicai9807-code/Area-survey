@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>计划外普查任务</title>
+  <link rel="stylesheet" href="area-survey-detail.css" />
+  <link rel="stylesheet" href="area-survey-role-tasks.css" />
+  <link rel="stylesheet" href="area-survey-outplan-tasks.css" />
+</head>
+<body>
+  <header class="topbar"><div class="topbar-left"><span class="brand-mark">普</span><span class="system-name">面积普查与检查管理系统</span></div><div class="topbar-right"><select id="roleSelect" class="role-select" onchange="changeRole(this.value)"><option value="admin">业务管理员</option><option value="department">管理部人员</option><option value="office">片区所长</option><option value="surveyor">普查人员</option></select><span class="env-badge">演示环境</span><div class="user"><span class="avatar" id="currentAvatar">业</span><span id="currentUser">业务管理员</span><span>⌄</span></div></div></header>
+  <aside class="sider"><nav class="menu"><section><div class="menu-group-title"><span class="menu-icon">▦</span><span>面积普查</span><span class="menu-badge">7</span><span class="menu-arrow">⌄</span></div><a class="menu-item" href="area-survey-plan-list.html">面积普查任务管理</a><a class="menu-item" href="area-survey-outplan-list.html">计划外普查任务管理</a><a class="menu-item selected" href="area-survey-outplan-tasks.html">计划外普查任务</a><a class="menu-item" href="area-survey-station-details.html">面积普查站点明细</a><a class="menu-item" href="area-survey-offnetwork-stats.html">未在网建筑物统计</a><a class="menu-item" href="area-survey-office-tasks.html">我的面积普查任务（片区所）</a><a class="menu-item" href="area-survey-surveyor-tasks.html">我的面积普查任务（普查人员）</a></section><section><div class="menu-group-title"><span class="menu-icon">✓</span><span>面积检查</span><span class="menu-arrow">⌄</span></div><div class="menu-item">面积检查任务管理<span class="menu-note">待接入</span></div></section></nav></aside>
+  <main>
+    <div class="breadcrumb"><a href="area-survey-plan-list.html">面积普查</a>&nbsp;&nbsp;/&nbsp;&nbsp;计划外普查任务</div>
+    <div class="page-heading"><div><h1>计划外普查任务</h1><div class="subtitle">按角色处理计划外任务的人员分配、填报、审核和退回</div></div><span class="source-pill">任务来源：计划外</span></div>
+    <div class="scope-alert"><div><strong id="roleViewTitle">业务管理员全量视图</strong><span id="roleViewTip">：查看全部计划外任务进度、审批记录和操作日志。</span></div><span class="scope-meta" id="scopeText">数据范围：全部管理部</span></div>
+    <section class="card"><div class="filters">
+      <div class="filter-item"><label for="reasonFilter">普查原因</label><select id="reasonFilter" class="control"><option value="">全部</option><option value="area">面积变化</option><option value="direct">一管到户（自管站）</option><option value="new">新开户</option><option value="gas">燃气替代</option></select></div>
+      <div class="filter-item"><label for="codeFilter">站点编码</label><input id="codeFilter" class="control" placeholder="请输入站点编码" /></div>
+      <div class="filter-item"><label for="nameFilter">站点名称</label><input id="nameFilter" class="control" placeholder="请输入站点名称" /></div>
+      <div class="filter-item"><label for="typeFilter">站点类型</label><select id="typeFilter" class="control"><option value="">全部</option><option>自管站</option><option>用户站</option><option>对公用户</option></select></div>
+      <div class="filter-item"><label for="statusFilter">任务状态</label><select id="statusFilter" class="control"><option value="">全部</option><option>待分配</option><option>进行中</option><option>所长审核</option><option>管理部审核</option><option>已结束</option><option>已退回</option></select></div>
+      <div class="filter-actions"><button class="btn btn-primary" onclick="searchTasks()">查询</button><button class="btn" onclick="resetFilters()">重置</button></div>
+    </div></section>
+    <section class="card tabs-card"><div class="task-tabs" id="statusTabs"></div><div class="card-body"><div class="table-wrap"><table><thead><tr><th style="width:55px">序号</th><th style="width:150px">任务名称</th><th style="width:115px">站点编码</th><th style="width:150px">站点名称</th><th style="width:92px">站点类型</th><th style="width:150px">普查原因</th><th style="width:120px">管理部</th><th style="width:125px">片区所</th><th style="width:140px">普查人员</th><th style="width:105px" class="center">任务状态</th><th style="width:95px" class="center">下发状态</th><th style="width:95px" class="center">审核状态</th><th style="width:150px">最近操作时间</th><th class="operation-cell" style="width:235px">操作</th></tr></thead><tbody id="taskBody"></tbody></table></div><div id="emptyState" class="empty-state" style="display:none"><div class="empty-icon">□</div><div>暂无符合条件的计划外普查任务</div></div><div class="pagination-row"><span id="totalText"></span><div class="pages" id="pages"></div><span>10条/页</span></div></div></section>
+  </main>
+  <div class="modal-mask" id="personMask"><section class="modal"><div class="modal-header"><div class="modal-title">转派/改派普查人员</div><button class="close" onclick="closePersonModal()">×</button></div><div class="modal-body"><div class="form-row"><label class="required">普查人员</label><div class="selected-persons" id="selectedPersons"></div><div class="field-error" id="personError"></div></div><div class="form-row"><label for="personSearch">选择人员</label><input id="personSearch" class="control" placeholder="搜索姓名" oninput="renderPersonOptions()" /><div class="person-options" id="personOptions"></div></div></div><div class="modal-footer"><button class="btn" onclick="closePersonModal()">取消</button><button class="btn btn-primary" onclick="saveAssignees()">保存</button></div></section></div>
+  <div class="modal-mask" id="dispatchMask"><section class="modal confirm-modal"><div class="modal-header"><div class="modal-title">下发普查任务</div><button class="close" onclick="closeDispatchConfirm()">×</button></div><div class="modal-body"><div class="confirm-text" id="dispatchText"></div></div><div class="modal-footer"><button class="btn" onclick="closeDispatchConfirm()">取消</button><button class="btn btn-primary" onclick="confirmDispatch()">确认下发</button></div></section></div>
+  <div class="modal-mask" id="withdrawMask"><section class="modal confirm-modal"><div class="modal-header"><div class="modal-title">撤回上报</div><button class="close" onclick="closeWithdrawConfirm()">×</button></div><div class="modal-body"><div class="confirm-text" id="withdrawText"></div></div><div class="modal-footer"><button class="btn" onclick="closeWithdrawConfirm()">取消</button><button class="btn btn-primary" onclick="confirmWithdraw()">确认撤回</button></div></section></div>
+  <div class="toast" id="toast"></div>
+  <script src="area-survey-outplan-data.js"></script>
+  <script src="area-survey-outplan-tasks.js"></script>
+</body>
+</html>

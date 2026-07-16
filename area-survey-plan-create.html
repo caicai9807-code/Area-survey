@@ -409,8 +409,8 @@
   <aside class="sider">
     <nav class="menu" aria-label="系统菜单">
       <section class="menu-group" id="surveyMenu">
-        <div class="menu-group-title" onclick="toggleMenu('surveyMenu')"><span class="menu-icon">▦</span><span>面积普查</span><span class="menu-badge">5</span><span class="menu-arrow">⌄</span></div>
-        <div class="menu-children"><a class="menu-item selected" href="area-survey-plan-list.html">面积普查任务管理</a><a class="menu-item" href="area-survey-station-details.html">面积普查站点明细</a><a class="menu-item" href="area-survey-offnetwork-stats.html">未在网建筑物统计</a><a class="menu-item" href="area-survey-office-tasks.html">我的面积普查任务（片区所）</a><a class="menu-item" href="area-survey-surveyor-tasks.html">我的面积普查任务（普查人员）</a></div>
+        <div class="menu-group-title" onclick="toggleMenu('surveyMenu')"><span class="menu-icon">▦</span><span>面积普查</span><span class="menu-badge">7</span><span class="menu-arrow">⌄</span></div>
+        <div class="menu-children"><a class="menu-item selected" href="area-survey-plan-list.html">面积普查任务管理</a><a class="menu-item" href="area-survey-outplan-list.html">计划外普查任务管理</a><a class="menu-item" href="area-survey-outplan-tasks.html">计划外普查任务</a><a class="menu-item" href="area-survey-station-details.html">面积普查站点明细</a><a class="menu-item" href="area-survey-offnetwork-stats.html">未在网建筑物统计</a><a class="menu-item" href="area-survey-office-tasks.html">我的面积普查任务（片区所）</a><a class="menu-item" href="area-survey-surveyor-tasks.html">我的面积普查任务（普查人员）</a></div>
       </section>
       <section class="menu-group collapsed" id="inspectionMenu">
         <div class="menu-group-title" onclick="toggleMenu('inspectionMenu')"><span class="menu-icon">✓</span><span>面积检查</span><span class="menu-arrow">⌄</span></div>
@@ -439,7 +439,7 @@
             <label class="required" for="surveyType">普查类型</label>
             <select id="surveyType" class="control">
               <option value="">请选择普查类型</option>
-              <option>自管站</option><option>用户站</option><option>对公户</option>
+              <option>自管站</option><option>用户站</option><option>对公用户</option>
             </select>
             <div class="error-text" id="surveyTypeError"></div>
           </div>
@@ -517,12 +517,11 @@
     const departments = {
       '裕华管理部': ['裕华片区所', '槐底片区所'],
       '长安管理部': ['长安片区所', '谈固片区所'],
-      '桥西管理部': ['桥西片区所', '新石片区所'],
-      '新华管理部': ['新华片区所', '联盟片区所']
+      '桥西管理部': ['桥西片区所', '新石片区所']
     };
-    const districts = ['裕华区', '长安区', '桥西区', '新华区'];
-    const stationNames = ['春江花月西站', '金域蓝湾站', '盛世长安站', '恒大华府站', '和平家园站', '新石小区站', '联盟小区站', '槐安路站'];
-    const stationData = Array.from({ length: 38 }, (_, index) => {
+    const districts = ['裕华区', '长安区', '桥西区'];
+    const stationNames = ['春江花月西站', '金域蓝湾站', '盛世长安站', '恒大华府站', '新石小区站', '槐安路站'];
+    const stationData = Array.from({ length: 30 }, (_, index) => {
       const deptNames = Object.keys(departments);
       const dept = deptNames[index % deptNames.length];
       const office = departments[dept][index % 2];
@@ -551,7 +550,20 @@
     function toggleMenu(id) { document.getElementById(id).classList.toggle('collapsed'); }
 
     function readPlans() {
-      try { return JSON.parse(localStorage.getItem(PLAN_KEY) || '[]'); }
+      try {
+        return JSON.parse(localStorage.getItem(PLAN_KEY) || '[]').map(item => {
+          const stations = (item.stations || []).filter(station => departments[station.department]);
+          if (item.stations?.length && !stations.length) return null;
+          const stationIds = (item.stationIds || []).filter(id => stationData.some(station => station.id === id));
+          const departmentSet = [...new Set(stations.map(station => station.department))];
+          return {
+            ...item,
+            stations,
+            stationIds,
+            department: departmentSet.length > 1 ? '多个管理部' : departmentSet[0] || item.department
+          };
+        }).filter(item => item && (item.department === '多个管理部' || departments[item.department] || item.department === '待确认'));
+      }
       catch (error) { return []; }
     }
 
@@ -789,19 +801,19 @@
         if (index >= 0 && index < 27) {
           plan = {
             name: `${2026 - (index % 3)}年面积普查计划${String(index + 1).padStart(2, '0')}`,
-            type: ['用户站', '自管站', '对公户'][index % 3],
+            type: ['用户站', '自管站', '对公用户'][index % 3],
             year: ['2026年', '2027年', '2025年'][index % 3],
             stationIds: []
           };
         }
       }
       if (!plan) return;
-      if (plan.type === '部分报停') plan.type = '对公户';
+      if (['部分报停','\u5bf9\u516c\u6237'].includes(plan.type)) plan.type = '对公用户';
       editingPlan = plan;
       document.getElementById('taskName').value = plan.name === '未命名普查计划' ? '' : plan.name;
       document.getElementById('surveyType').value = plan.type === '待确认' ? '' : plan.type;
       document.getElementById('surveyYear').value = plan.year === '待确认' ? '' : plan.year;
-      selectedStationIds = new Set(plan.stationIds || []);
+      selectedStationIds = new Set((plan.stationIds || []).filter(id => stationData.some(station => station.id === id)));
       document.getElementById('pageTitle').textContent = '编辑普查计划';
       document.getElementById('breadcrumbTitle').textContent = '编辑普查计划';
       document.title = '编辑普查计划';

@@ -1,0 +1,17 @@
+.operation,
+.operation-fixed {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  background: #fff;
+  box-shadow: -8px 0 12px -12px rgba(0, 0, 0, .35);
+}
+
+.operation-fixed {
+  z-index: 3;
+  background: #fafbfc;
+}
+
+tr:hover td.operation {
+  background: #fafcff;
+}

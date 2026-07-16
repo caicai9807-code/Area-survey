@@ -164,6 +164,19 @@ main {
 h1 { margin: 0; font-size: 18px; font-weight: 600; }
 .subtitle { margin-top: 5px; color: var(--text-tertiary); font-size: 12px; }
 .heading-actions { display: flex; align-items: center; gap: 10px; }
+.source-context {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid #adc6ff;
+  border-radius: 4px;
+  background: #f0f5ff;
+  color: #315fd4;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.source-context[hidden] { display: none; }
 
 .card {
   background: #fff;

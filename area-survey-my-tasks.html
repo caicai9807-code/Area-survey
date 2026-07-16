@@ -43,7 +43,7 @@
   </header>
 
   <aside class="sider">
-    <nav class="menu"><section><div class="menu-group-title"><span class="menu-icon">▦</span><span>面积普查</span><span class="menu-badge">5</span><span class="menu-arrow">⌄</span></div><a class="menu-item" href="area-survey-plan-list.html">面积普查任务管理</a><a class="menu-item" href="area-survey-station-details.html">面积普查站点明细</a><a class="menu-item" href="area-survey-offnetwork-stats.html">未在网建筑物统计</a><a class="menu-item selected" href="area-survey-my-tasks.html">我的面积普查任务</a></section><section><div class="menu-group-title"><span class="menu-icon">✓</span><span>面积检查</span><span class="menu-arrow">⌄</span></div><div class="menu-item">面积检查任务管理<span class="menu-note">待接入</span></div></section></nav>
+    <nav class="menu"><section><div class="menu-group-title"><span class="menu-icon">▦</span><span>面积普查</span><span class="menu-badge">7</span><span class="menu-arrow">⌄</span></div><a class="menu-item" href="area-survey-plan-list.html">面积普查任务管理</a><a class="menu-item" href="area-survey-outplan-list.html">计划外普查任务管理</a><a class="menu-item" href="area-survey-outplan-tasks.html">计划外普查任务</a><a class="menu-item" href="area-survey-station-details.html">面积普查站点明细</a><a class="menu-item" href="area-survey-offnetwork-stats.html">未在网建筑物统计</a><a class="menu-item selected" href="area-survey-my-tasks.html">我的面积普查任务</a></section><section><div class="menu-group-title"><span class="menu-icon">✓</span><span>面积检查</span><span class="menu-arrow">⌄</span></div><div class="menu-item">面积检查任务管理<span class="menu-note">待接入</span></div></section></nav>
   </aside>
 
   <main>
@@ -98,7 +98,7 @@
   <script>
     const currentSurveyor = '张三';
     const people = ['张三','李晨晨','王海','赵敏','刘洋','孙琪'];
-    const taskTypes = ['自管站','用户站','对公户'];
+    const taskTypes = ['自管站','用户站','对公用户'];
     const statusPool = ['待分配','进行中','所长审核','管理部审核','已结束','已退回'];
     const auditPool = ['未上报','已上报','待审核','待审核','通过','已退回'];
     let tasks = Array.from({length:24},(_,index)=>{

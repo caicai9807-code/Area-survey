@@ -471,10 +471,11 @@
       <nav class="menu" aria-label="系统菜单">
         <section class="menu-group" id="surveyMenu">
           <div class="menu-group-title" onclick="toggleMenu('surveyMenu')">
-            <span class="menu-icon">▦</span><span>面积普查</span><span class="menu-badge">5</span><span class="menu-arrow">⌄</span>
+            <span class="menu-icon">▦</span><span>面积普查</span><span class="menu-badge">7</span><span class="menu-arrow">⌄</span>
           </div>
           <div class="menu-children">
             <a class="menu-item selected" href="area-survey-plan-list.html">面积普查任务管理</a>
+            <a class="menu-item" href="area-survey-outplan-list.html">计划外普查任务管理</a><a class="menu-item" href="area-survey-outplan-tasks.html">计划外普查任务</a>
             <a class="menu-item" href="area-survey-station-details.html">面积普查站点明细</a><a class="menu-item" href="area-survey-offnetwork-stats.html">未在网建筑物统计</a>
             <a class="menu-item" href="area-survey-office-tasks.html">我的面积普查任务（片区所）</a>
             <a class="menu-item" href="area-survey-surveyor-tasks.html">我的面积普查任务（普查人员）</a>
@@ -520,7 +521,7 @@
             <option value="">全部</option>
             <option>用户站</option>
             <option>自管站</option>
-            <option>对公户</option>
+            <option>对公用户</option>
           </select>
         </div>
         <div class="filter-actions">
@@ -594,8 +595,9 @@
 
   <script>
     const STORAGE_KEY = 'areaSurveyPlans';
-    const departments = ['裕华管理部', '长安管理部', '桥西管理部', '新华管理部'];
-    const types = ['用户站', '自管站', '对公户'];
+    const departments = ['裕华管理部', '长安管理部', '桥西管理部'];
+    const allowedDepartments = new Set(departments);
+    const types = ['用户站', '自管站', '对公用户'];
     const years = ['2026年', '2027年', '2025年'];
     const baseRecords = Array.from({ length: 27 }, (_, index) => {
       const number = index + 1;
@@ -617,10 +619,19 @@
 
     function loadStoredPlans() {
       try {
-        return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]').map(item => ({
-          ...item,
-          type: item.type === '部分报停' ? '对公户' : item.type
-        }));
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]').map(item => {
+          const stations = (item.stations || []).filter(station => allowedDepartments.has(station.department));
+          if (item.stations?.length && !stations.length) return null;
+          const stationIds = stations.length ? stations.map(station => station.id) : (item.stationIds || []);
+          const departmentSet = [...new Set(stations.map(station => station.department))];
+          return {
+            ...item,
+            stations,
+            stationIds,
+            department: departmentSet.length > 1 ? '多个管理部' : departmentSet[0] || item.department,
+            type: ['部分报停','\u5bf9\u516c\u6237'].includes(item.type) ? '对公用户' : item.type
+          };
+        }).filter(item => item && (item.department === '多个管理部' || allowedDepartments.has(item.department) || item.department === '待确认'));
       } catch (error) {
         return [];
       }
@@ -631,7 +642,11 @@
       if (!raw) return;
       try {
         const incoming = JSON.parse(raw);
-        if (incoming.type === '部分报停') incoming.type = '对公户';
+        if (['部分报停','\u5bf9\u516c\u6237'].includes(incoming.type)) incoming.type = '对公用户';
+        if (incoming.department !== '多个管理部' && incoming.department !== '待确认' && !allowedDepartments.has(incoming.department)) return;
+        if (incoming.stations) incoming.stations = incoming.stations.filter(station => allowedDepartments.has(station.department));
+        if (Array.isArray(incoming.stations) && !incoming.stations.length) return;
+        if (incoming.stations?.length) incoming.stationIds = incoming.stations.map(station => station.id);
         const plans = loadStoredPlans().filter(item => String(item.id) !== String(incoming.id));
         plans.unshift(incoming);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(plans));

@@ -1,14 +1,15 @@
 const CURRENT_YEAR='2026年';
 const departments=[
   {id:'d1',name:'桥西管理部',offices:[{id:'o1',name:'桥西片区所'},{id:'o2',name:'振头片区所'},{id:'o3',name:'红旗片区所'}]},
-  {id:'d2',name:'长安管理部',offices:[{id:'o4',name:'长安片区所'},{id:'o5',name:'谈固片区所'}]}
+  {id:'d2',name:'长安管理部',offices:[{id:'o4',name:'长安片区所'},{id:'o5',name:'谈固片区所'}]},
+  {id:'d3',name:'裕华管理部',offices:[{id:'o6',name:'裕华片区所'},{id:'o7',name:'槐底片区所'}]}
 ];
 const stationNames=['春江花月西站','金域蓝湾站','盛世长安站','恒大华府站','和平家园站','新石小区站','拉菲大厦','省教育考试院用户站','恒泰商务楼','龙湖天街站','荣盛华府站','西美花街站'];
 const statuses=['待普查','普查中','所长审核','管理部审核','已退回','普查完成'];
-const types=['自管站','用户站','对公户'];
+const types=['自管站','用户站','对公用户'];
 const surveyors=['张三','李晨晨','王海','赵敏','刘洋'];
 let stations=Array.from({length:28},(_,index)=>{
-  const dept=index<22?departments[0]:departments[1];
+  const dept=index<16?departments[0]:index<22?departments[1]:departments[2];
   const office=dept.offices[index%dept.offices.length];
   const status=statuses[index%statuses.length];
   const buildingStart=1988+(index%25);
@@ -19,7 +20,9 @@ let stations=Array.from({length:28},(_,index)=>{
   const effectiveChange=currentArea-originalArea;
   const residentialChange=index%3===2?0:effectiveChange*.65;
   const nonResidentialChange=effectiveChange-residentialChange;
-  return {id:`station-detail-${index+1}`,year:index%7===0?'2027年':'2026年',code:index===6?'33925A001000000001Z':`60218B${String(index+1).padStart(3,'0')}`,name:stationNames[index%stationNames.length]+(index>11?`${index+1}`:''),status,auditStatus:status==='普查完成'?'通过':status==='管理部审核'?'待审核':'未上报',taskStatus:status,departmentId:dept.id,department:dept.name,officeId:office.id,office:office.name,type:types[index%types.length],subdistrict:['新石街道办事处','振头街道办事处','红旗街道办事处'][index%3],address:`石家庄市桥西区${['新石中路','友谊大街','红旗大街'][index%3]}${118+index}号`,buildingStart,buildingEnd:index%4===0?buildingStart+8:buildingStart,originalArea,currentArea,residentialChange,nonResidentialChange,surveyors:index%5===0?[]:[surveyors[index%surveyors.length],...(index%6===0?['张三']:[])],completedAt:complete,lastSyncedAt:'2026-07-14 09:30:00',approvalRecords:[],operationLogs:[]};
+  const district={d1:'桥西区',d2:'长安区',d3:'裕华区'}[dept.id];
+  const road={d1:['新石中路','友谊大街','红旗大街'],d2:['和平东路','中山东路','谈固大街'],d3:['槐安东路','体育南大街','裕华路']}[dept.id][index%3];
+  return {id:`station-detail-${index+1}`,year:index%7===0?'2027年':'2026年',code:index===6?'33925A001000000001Z':`60218B${String(index+1).padStart(3,'0')}`,name:stationNames[index%stationNames.length]+(index>11?`${index+1}`:''),status,auditStatus:status==='普查完成'?'通过':status==='管理部审核'?'待审核':'未上报',taskStatus:status,departmentId:dept.id,department:dept.name,officeId:office.id,office:office.name,type:types[index%types.length],subdistrict:['新石街道办事处','振头街道办事处','红旗街道办事处'][index%3],address:`石家庄市${district}${road}${118+index}号`,buildingStart,buildingEnd:index%4===0?buildingStart+8:buildingStart,originalArea,currentArea,residentialChange,nonResidentialChange,surveyors:index%5===0?[]:[surveyors[index%surveyors.length],...(index%6===0?['张三']:[])],completedAt:complete,lastSyncedAt:'2026-07-14 09:30:00',approvalRecords:[],operationLogs:[]};
 });
 
 let role='planning';
@@ -49,7 +52,7 @@ function scopedDepartments(){
 }
 function changeRole(nextRole){
   role=nextRole;
-  const config={planning:{name:'赵经理',avatar:'计',scope:'数据范围：全部管理部',tip:'计划经营部可查看全部站点，并退回管理部审核或已完成站点'},department:{name:'王建国',avatar:'管',scope:'数据范围：桥西管理部',tip:'管理部人员仅查看本管理部及下属片区所数据'},office:{name:'李主任',avatar:'所',scope:'数据范围：桥西片区所',tip:'片区所人员仅查看本片区所数据'},surveyor:{name:'张三',avatar:'普',scope:'数据范围：本人已分配站点',tip:'普查人员仅查看已分配给本人的站点'}}[role];
+  const config={planning:{name:'业务管理员',avatar:'业',scope:'数据范围：全部管理部',tip:'业务管理员可查看全部站点、审批记录和操作日志'},department:{name:'王建国',avatar:'管',scope:'数据范围：桥西管理部',tip:'管理部人员仅审核、查看和删除本管理部管辖站点'},office:{name:'李主任',avatar:'所',scope:'数据范围：桥西片区所',tip:'片区所长仅查看本片区所数据'},surveyor:{name:'张三',avatar:'普',scope:'数据范围：本人已分配站点',tip:'普查人员仅查看已分配给本人的站点'}}[role];
   document.getElementById('currentUser').textContent=config.name;document.getElementById('currentAvatar').textContent=config.avatar;document.getElementById('scopeTag').textContent=config.scope;document.getElementById('treeTip').textContent=config.tip;
   selectedOrg=role==='planning'||role==='surveyor'?null:role==='office'?{type:'office',id:'o1'}:{type:'department',id:'d1'};
   selectedIds.clear();currentPage=1;renderTree();applyFilters();renderTable();
@@ -90,7 +93,7 @@ function changeDisplay(value){const number=Number(value);if(number===0)return '<
 function rateDisplay(item){const change=item.currentArea-item.originalArea;if(change===0)return '<span class="area-flat">-</span>';if(item.originalArea===0)return '<span class="rate-unavailable" title="原面积为0，无法计算变化率">无法计算</span>';const rate=change/item.originalArea*100;return `<span class="${rate>0?'area-up':'area-down'}">${rate>0?'+':''}${rate.toFixed(2)}%</span>`;}
 function renderTable(){
   const pages=Math.max(1,Math.ceil(filteredStations.length/pageSize));currentPage=Math.min(currentPage,pages);const start=(currentPage-1)*pageSize,pageRows=filteredStations.slice(start,start+pageSize);
-  document.getElementById('stationBody').innerHTML=pageRows.map((item,index)=>{const canReturn=role==='planning'&&['管理部审核','普查完成'].includes(item.status);return `<tr id="row-${item.id}"><td class="check-cell"><input type="checkbox" ${selectedIds.has(item.id)?'checked':''} onchange="toggleOne('${item.id}',this.checked)" /></td><td>${start+index+1}</td><td title="${item.code}">${item.code}</td><td title="${item.name}">${item.name}</td><td class="center">${statusTag(item.status)}</td><td>${item.department}</td><td>${item.office}</td><td>${item.type}</td><td title="${item.subdistrict}">${item.subdistrict}</td><td title="${item.address}">${item.address}</td><td>${formatBuildingYear(item)}</td><td class="number">${formatArea(item.originalArea)}</td><td class="number">${formatArea(item.currentArea)}</td><td class="number">${rateDisplay(item)}</td><td class="number">${changeDisplay(item.residentialChange)}</td><td class="number">${changeDisplay(item.nonResidentialChange)}</td><td title="${item.surveyors.join('、')||'待分配'}">${item.surveyors.join('、')||'<span class="muted">待分配</span>'}</td><td>${item.completedAt||'—'}</td><td class="operation-cell"><button class="link" onclick="openDetail('${item.id}')">详情</button><button class="link" onclick="openSingleSync('${item.id}')">同步</button>${canReturn?`<button class="link return-link" onclick="openReturnModal('${item.id}')">退回</button>`:''}</td></tr>`;}).join('');
+  document.getElementById('stationBody').innerHTML=pageRows.map((item,index)=>{const canReturn=role==='planning'&&['管理部审核','普查完成'].includes(item.status),canAudit=role==='department'&&item.status==='管理部审核',canDelete=role==='department';return `<tr id="row-${item.id}"><td class="check-cell"><input type="checkbox" ${selectedIds.has(item.id)?'checked':''} onchange="toggleOne('${item.id}',this.checked)" /></td><td>${start+index+1}</td><td title="${item.code}">${item.code}</td><td title="${item.name}">${item.name}</td><td class="center">${statusTag(item.status)}</td><td>${item.department}</td><td>${item.office}</td><td>${item.type}</td><td title="${item.subdistrict}">${item.subdistrict}</td><td title="${item.address}">${item.address}</td><td>${formatBuildingYear(item)}</td><td class="number">${formatArea(item.originalArea)}</td><td class="number">${formatArea(item.currentArea)}</td><td class="number">${rateDisplay(item)}</td><td class="number">${changeDisplay(item.residentialChange)}</td><td class="number">${changeDisplay(item.nonResidentialChange)}</td><td title="${item.surveyors.join('、')||'待分配'}">${item.surveyors.join('、')||'<span class="muted">待分配</span>'}</td><td>${item.completedAt||'—'}</td><td class="operation-cell"><button class="link" onclick="openDetail('${item.id}')">详情</button>${canAudit?`<button class="link" onclick="openDetail('${item.id}',true)">审核</button>`:''}<button class="link" onclick="openSingleSync('${item.id}')">同步</button>${canDelete?`<button class="link danger-link" onclick="deletePlanStation('${item.id}')">删除</button>`:''}${canReturn?`<button class="link return-link" onclick="openReturnModal('${item.id}')">退回</button>`:''}</td></tr>`;}).join('');
   document.getElementById('emptyState').hidden=Boolean(pageRows.length);document.querySelector('.station-table-wrap').style.display=pageRows.length?'block':'none';document.getElementById('resultCount').textContent=`共 ${filteredStations.length} 项`;document.getElementById('totalText').textContent=`共 ${filteredStations.length} 个项目`;document.getElementById('pages').innerHTML=Array.from({length:pages},(_,i)=>`<button class="page-btn ${i+1===currentPage?'active':''}" onclick="goPage(${i+1})">${i+1}</button>`).join('');
   document.getElementById('selectAll').checked=Boolean(pageRows.length)&&pageRows.every(item=>selectedIds.has(item.id));updateSelection();
 }
@@ -99,10 +102,11 @@ function toggleOne(id,checked){checked?selectedIds.add(id):selectedIds.delete(id
 function toggleAll(checked){const start=(currentPage-1)*pageSize;filteredStations.slice(start,start+pageSize).forEach(item=>checked?selectedIds.add(item.id):selectedIds.delete(item.id));renderTable();}
 function updateSelection(){document.getElementById('selectedHint').textContent=`已选择 ${selectedIds.size} 项`;document.getElementById('batchSyncBtn').disabled=!selectedIds.size;}
 
-function openDetail(id){
+function openDetail(id,audit=false){
   const item=stations.find(row=>row.id===id);const context={plan:{id:`plan-${item.year}`,name:`${item.year}${item.type}普查计划`,year:item.year,type:item.type,status:'创建成功'},task:{id:item.id,status:item.status,auditStatus:item.auditStatus,updatedAt:item.completedAt||item.lastSyncedAt,surveyors:item.surveyors.join('、')||'待分配',station:{id:item.id,code:item.code,name:item.name,department:item.department,office:item.office,district:'桥西区',address:item.address},timeline:item.approvalRecords}};
-  location.href=`area-survey-task-detail.html?data=${encodeURIComponent(JSON.stringify(context))}&source=station-detail`;
+  location.href=`area-survey-task-detail.html?data=${encodeURIComponent(JSON.stringify(context))}&source=station-detail${audit?'&audit=1':''}`;
 }
+function deletePlanStation(id){if(role!=='department'){showToast('仅管理部人员可删除本部门计划内站点');return;}const item=stations.find(row=>row.id===id);if(!item||item.departmentId!=='d1'){showToast('只能删除本管理部管辖站点');return;}if(!confirm(`确认从计划内任务中删除“${item.name}（${item.code}）”吗？删除后将保留站点快照和操作记录。`))return;stations=stations.filter(row=>row.id!==id);selectedIds.delete(id);applyFilters();renderTree();renderTable();showToast('计划内站点已删除，操作记录已保留');}
 function openReturnModal(id){
   const item=stations.find(row=>row.id===id);
   if(role!=='planning'){showToast('当前账号无退回权限');return;}
@@ -134,4 +138,5 @@ function closeResult(){document.getElementById('resultMask').classList.remove('o
 function nowText(){const d=new Date(),pad=value=>String(value).padStart(2,'0');return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;}
 function showToast(message){clearTimeout(toastTimer);const toast=document.getElementById('toast');toast.textContent=message;toast.classList.add('show');toastTimer=setTimeout(()=>toast.classList.remove('show'),2400);}
 document.addEventListener('keydown',event=>{if(event.key==='Escape'){closeSync();closeResult();closeReturnModal();}});
+try{const rawUpdate=new URLSearchParams(location.search).get('taskUpdate');if(rawUpdate){const update=JSON.parse(rawUpdate),item=stations.find(row=>row.id===update.id);if(item){item.status=update.status==='已结束'?'普查完成':update.status;item.auditStatus=update.auditStatus;item.lastSyncedAt=update.updatedAt;}}}catch(error){}
 document.getElementById('yearFilter').value=CURRENT_YEAR;changeRole('planning');
