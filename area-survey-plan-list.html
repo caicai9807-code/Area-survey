@@ -299,7 +299,7 @@
     td { color: var(--text); font-size: 13px; }
     .number-col { text-align: right; }
     .status-cell { text-align: center; }
-    .checkbox-col { width: 46px; text-align: center; }
+    .serial-col { width: 64px; text-align: center; }
     .dept-col { width: 120px; }
     .name-col { width: 190px; }
     .type-col { width: 90px; }
@@ -540,7 +540,7 @@
           <table>
             <thead>
               <tr>
-                <th class="checkbox-col"><input type="checkbox" aria-label="全选" disabled /></th>
+                <th class="serial-col">序号</th>
                 <th class="dept-col">所属管理部</th>
                 <th class="name-col">计划名称</th>
                 <th class="type-col">普查类型</th>
@@ -714,9 +714,9 @@
       const start = (currentPage - 1) * currentPageSize;
       const pageData = filteredRecords.slice(start, start + currentPageSize);
       const tbody = document.getElementById('tableBody');
-      tbody.innerHTML = pageData.map(row => `
+      tbody.innerHTML = pageData.map((row, index) => `
         <tr>
-          <td class="checkbox-col"><input type="checkbox" aria-label="选择${row.name}" /></td>
+          <td class="serial-col">${start + index + 1}</td>
           <td title="${row.department}">${row.department}</td>
           <td title="${row.name}">${row.name}</td>
           <td>${row.type}</td>
