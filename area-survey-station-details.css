@@ -32,7 +32,7 @@
 .toolbar-actions { display:flex; align-items:center; gap:10px; }
 .toolbar-actions > span { color:var(--text-tertiary); font-size:12px; }
 .station-table-wrap { overflow:auto; }
-.station-table-wrap table { min-width:2525px; }
+.station-table-wrap table { min-width:2660px; }
 .station-table-wrap th,.station-table-wrap td { border-right:0; }
 .check-cell { width:48px; text-align:center; }
 .station-table-wrap .operation-cell { position:sticky; right:0; z-index:2; background:#fff; box-shadow:-4px 0 7px rgba(0,0,0,.05); }
