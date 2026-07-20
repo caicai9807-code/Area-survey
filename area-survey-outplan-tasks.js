@@ -1,11 +1,17 @@
 const OUTPLAN_CHILD_KEY = 'areaSurveyOutPlanChildStates';
 const OUTPLAN_ROLE_KEY = 'areaSurveyOutPlanRole';
 const OUTPLAN_PEOPLE = ['张三', '李晨晨', '王海', '赵敏', '刘洋', '孙琪'];
-const OUTPLAN_TAB_STATUSES = ['全部', '待分配', '进行中', '所长审核', '管理部审核', '已结束', '已退回'];
+const OUTPLAN_REASON_TABS = [
+  { value: '', label: '全部' },
+  { value: 'AREA_CHANGE', label: '面积变化' },
+  { value: 'DIRECT_TO_HOUSEHOLD', label: '一管到户' },
+  { value: 'NEW_ACCOUNT_OR_CAPACITY', label: '新开户及增容' },
+  { value: 'WHOLESALE_USER', label: '趸售用户' }
+];
 const childPageSize = 10;
 
 let currentRole = 'admin';
-let currentStatusTab = '全部';
+let currentReasonTab = '';
 let childTasks = [];
 let filteredTasks = [];
 let currentPage = 1;
@@ -139,31 +145,32 @@ function changeRole(role) {
   renderAll();
 }
 
-function applyFilters() {
-  const reason = document.getElementById('reasonFilter').value;
+function filteredByQuery() {
   const code = document.getElementById('codeFilter').value.trim().toLowerCase();
   const name = document.getElementById('nameFilter').value.trim().toLowerCase();
   const type = document.getElementById('typeFilter').value;
   const status = document.getElementById('statusFilter').value;
-  filteredTasks = visibleTasks()
-    .filter(task => currentStatusTab === '全部' || task.status === currentStatusTab)
-    .filter(task => (!reason || task.reason === reason)
-      && (!code || task.station.code.toLowerCase().includes(code))
-      && (!name || task.station.name.toLowerCase().includes(name) || task.parentName.toLowerCase().includes(name))
-      && (!type || task.station.type === type)
-      && (!status || task.status === status));
+  return visibleTasks().filter(task => (!code || task.station.code.toLowerCase().includes(code))
+    && (!name || task.station.name.toLowerCase().includes(name) || task.parentName.toLowerCase().includes(name))
+    && (!type || task.station.type === type)
+    && (!status || task.status === status));
+}
+
+function applyFilters() {
+  filteredTasks = filteredByQuery()
+    .filter(task => !currentReasonTab || task.reason === currentReasonTab);
 }
 
 function renderTabs() {
-  const scoped = visibleTasks();
-  document.getElementById('statusTabs').innerHTML = OUTPLAN_TAB_STATUSES.map(status => {
-    const count = status === '全部' ? scoped.length : scoped.filter(task => task.status === status).length;
-    return `<button class="task-tab ${status === currentStatusTab ? 'active' : ''}" onclick="switchStatus('${status}')">${status}<span class="count-badge">${count}</span></button>`;
+  const queriedTasks = filteredByQuery();
+  document.getElementById('reasonTabs').innerHTML = OUTPLAN_REASON_TABS.map(tab => {
+    const count = tab.value ? queriedTasks.filter(task => task.reason === tab.value).length : queriedTasks.length;
+    return `<button class="task-tab ${tab.value === currentReasonTab ? 'active' : ''}" onclick="switchReason('${tab.value}')">${tab.label}<span class="count-badge">${count}</span></button>`;
   }).join('');
 }
 
-function switchStatus(status) {
-  currentStatusTab = status;
+function switchReason(reason) {
+  currentReasonTab = reason;
   currentPage = 1;
   applyFilters();
   renderAll();
@@ -209,6 +216,9 @@ function detailLink(task, audit = false) {
 }
 
 function fillLink(task) {
+  if (task.reason === 'WHOLESALE_USER') {
+    return `area-survey-wholesale-fill.html?taskId=${encodeURIComponent(task.parentId)}&itemId=${encodeURIComponent(outPlanWholesaleItemId(task.parentId, task.station.id))}&source=wholesale-fill&mode=edit`;
+  }
   const page = task.station.type === '自管站'
     ? 'area-survey-survey-fill.html'
     : task.station.type === '用户站'
@@ -240,7 +250,7 @@ function actions(task) {
     return assign + dispatch + detail + audit;
   }
   const editable = ['进行中', '已退回'].includes(task.status);
-  const fill = editable ? `<a class="link" href="${fillLink(task)}">填报</a>` : '';
+  const fill = editable ? `<a class="link" href="${fillLink(task)}" target="_blank" rel="noopener">填报</a>` : '';
   const canWithdraw = task.status === '所长审核' && ['待审核', '已上报'].includes(task.auditStatus);
   const withdraw = canWithdraw ? `<button class="link" onclick="openWithdrawConfirm('${task.id}')">撤回</button>` : '';
   return fill + detail + withdraw;
@@ -289,10 +299,10 @@ function searchTasks() {
 }
 
 function resetFilters() {
-  ['reasonFilter', 'codeFilter', 'nameFilter', 'typeFilter', 'statusFilter'].forEach(id => {
+  ['codeFilter', 'nameFilter', 'typeFilter', 'statusFilter'].forEach(id => {
     document.getElementById(id).value = '';
   });
-  currentStatusTab = '全部';
+  currentReasonTab = '';
   currentPage = 1;
   applyFilters();
   renderAll();
