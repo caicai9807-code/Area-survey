@@ -1,4 +1,5 @@
 const OUTPLAN_KEY='areaSurveyOutPlanTasks';
+const OUTPLAN_STATION_ARCHIVE_KEY='areaSurveyOutPlanStationArchiveOverrides';
 const OUTPLAN_REASONS={AREA_CHANGE:'面积变化',DIRECT_TO_HOUSEHOLD:'一管到户',NEW_ACCOUNT_OR_CAPACITY:'新开户及增容',WHOLESALE_USER:'趸售用户'};
 const OUTPLAN_REASON_ALIASES={
   AREA_CHANGE:'AREA_CHANGE',area:'AREA_CHANGE','面积变化':'AREA_CHANGE',
@@ -35,7 +36,8 @@ function outPlanNormalizeTasks(tasks){return (Array.isArray(tasks)?tasks:[]).map
 function outPlanLoad(){try{const saved=JSON.parse(localStorage.getItem(OUTPLAN_KEY)||'null');return outPlanNormalizeTasks(Array.isArray(saved)?saved:OUTPLAN_SEED);}catch(e){return outPlanNormalizeTasks(OUTPLAN_SEED);}}
 function outPlanSave(tasks){localStorage.setItem(OUTPLAN_KEY,JSON.stringify(outPlanNormalizeTasks(tasks)));}
 function outPlanNow(){const d=new Date(),p=v=>String(v).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;}
-function outPlanStation(id,task){return OUTPLAN_STATIONS.find(item=>item.id===id)||(task?.temporaryStations||[]).find(item=>item.id===id);}
+function outPlanStationArchiveOverrides(){try{return JSON.parse(localStorage.getItem(OUTPLAN_STATION_ARCHIVE_KEY)||'{}');}catch(error){return {};}}
+function outPlanStation(id,task){const formal=OUTPLAN_STATIONS.find(item=>item.id===id);return formal?{...formal,...(outPlanStationArchiveOverrides()[id]||{})}:(task?.temporaryStations||[]).find(item=>item.id===id);}
 function outPlanReason(task){return OUTPLAN_REASONS[outPlanNormalizeReason(task.reason)]||'未知原因';}
 function outPlanConflict(stationId,start,end,ignoreId){return outPlanLoad().find(task=>task.id!==ignoreId&&!['已完成','已作废'].includes(task.status)&&task.stationIds.includes(stationId)&&start<task.end&&end>task.start);}
 function outPlanTag(status){const map={'未下发':'gray','待分配':'orange','进行中':'blue','普查中':'blue','所长审核':'orange','管理部审核':'orange','已完成':'green','普查完成':'green','已作废':'red'};return `<span class="tag tag-${map[status]||'gray'}">${status}</span>`;}
@@ -48,3 +50,4 @@ function findWholesaleProject(taskId,itemId,projectId,tasks=outPlanLoad()){retur
 function recalculateWholesaleProject(project){project.buildings=(project.buildings||[]).map(outPlanNormalizeWholesaleBuilding);project.buildingCount=project.buildings.length;project.originalAreaTotal=project.buildings.reduce((sum,item)=>sum+item.originalArea,0);project.surveyedAreaTotal=project.buildings.reduce((sum,item)=>sum+item.surveyedArea,0);project.areaChangeTotal=project.surveyedAreaTotal-project.originalAreaTotal;return project;}
 function recalculateWholesaleStation(item){(item.projects||[]).forEach(recalculateWholesaleProject);return item;}
 function updateWholesaleProject(taskId,itemId,projectId,updater){const tasks=outPlanLoad(),project=findWholesaleProject(taskId,itemId,projectId,tasks);if(!project)return null;updater(project);recalculateWholesaleProject(project);outPlanSave(tasks);return project;}
+function updateWholesaleStationInfo(taskId,itemId,value){const tasks=outPlanLoad(),task=findOutplanTask(taskId,tasks),item=findOutplanTaskItem(taskId,itemId,tasks);if(!task||!item)return null;const stationValue={name:value.stationName,code:value.userCode,department:value.department,fullName:value.fullName,shortName:value.shortName,district:value.district,office:value.office,address:value.address,contact:value.contact,phone:value.phone,remark:value.remark};if(OUTPLAN_STATION_IDS.has(item.stationId)){const overrides=outPlanStationArchiveOverrides();overrides[item.stationId]={...(overrides[item.stationId]||{}),...stationValue};localStorage.setItem(OUTPLAN_STATION_ARCHIVE_KEY,JSON.stringify(overrides));}else{const station=(task.temporaryStations||[]).find(entry=>entry.id===item.stationId);if(station)Object.assign(station,stationValue);}Object.assign(item.stationSnapshot,{stationId:item.stationId,...value});outPlanSave(tasks);return {task,item};}
