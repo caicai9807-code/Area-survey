@@ -76,7 +76,7 @@ function buildChildren() {
   childTasks = outPlanLoad()
     .filter(parent => !['未下发', '已作废'].includes(parent.status))
     .flatMap(parent => parent.stationIds.map(stationId => {
-      const station = outPlanStation(stationId);
+      const station = outPlanStation(stationId, parent);
       if (!station) return null;
       const status = parentStatus(parent.status);
       const active = !['待分配', '已结束'].includes(status);

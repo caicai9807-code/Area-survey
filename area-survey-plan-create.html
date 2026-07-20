@@ -586,10 +586,10 @@
         return;
       }
       container.innerHTML = `<div class="table-wrap"><table><thead><tr>
-        <th class="code-col">换热站编码</th><th class="name-col">换热站名称</th><th class="district-col">行政区</th>
+        <th style="width:56px">序号</th><th class="code-col">换热站编码</th><th class="name-col">换热站名称</th><th class="district-col">行政区</th>
         <th class="office-col">所属片区所</th><th class="address-col">用热地址</th><th class="last-col">上一年度是否普查</th><th class="action-col">操作</th>
-      </tr></thead><tbody>${selected.map(item => `<tr>
-        <td>${item.code}</td><td title="${item.name}">${item.name}</td><td>${item.district}</td><td>${item.office}</td>
+      </tr></thead><tbody>${selected.map((item, index) => `<tr>
+        <td class="center">${index + 1}</td><td>${item.code}</td><td title="${item.name}">${item.name}</td><td>${item.district}</td><td>${item.office}</td>
         <td title="${item.address}">${item.address}</td><td class="last-col">${item.lastYearSurveyed ? '是' : '否'}</td>
         <td><button class="link danger" onclick="removeStation('${item.id}')">移除</button></td>
       </tr>`).join('')}</tbody></table></div>`;

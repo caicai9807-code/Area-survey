@@ -25,11 +25,12 @@ const OUTPLAN_SEED=[
 ];
 const OUTPLAN_STATION_IDS=new Set(OUTPLAN_STATIONS.map(item=>item.id));
 function outPlanNormalizeReason(reason){return OUTPLAN_REASON_ALIASES[String(reason||'').trim()]||null;}
-function outPlanNormalizeTasks(tasks){return (Array.isArray(tasks)?tasks:[]).map(item=>{const {reasonSubtype,reasonRaw,...task}=item,reason=outPlanNormalizeReason(item.reason);return {...task,reason:reason||'UNKNOWN',...(reason?{}:{reasonRaw:item.reason||reasonRaw||''}),stationIds:(task.stationIds||[]).filter(id=>OUTPLAN_STATION_IDS.has(id)),logs:[...(task.logs||[])]};}).filter(item=>item.stationIds.length);}
+function outPlanNormalizeTemporaryStations(stations){return (Array.isArray(stations)?stations:[]).filter(item=>item&&String(item.id||'').startsWith('tmp-')).map(item=>({...item,code:String(item.code||'').toUpperCase(),type:'用户站',source:'新建',temporary:true}));}
+function outPlanNormalizeTasks(tasks){return (Array.isArray(tasks)?tasks:[]).map(item=>{const {reasonSubtype,reasonRaw,...task}=item,reason=outPlanNormalizeReason(item.reason),temporaryStations=outPlanNormalizeTemporaryStations(item.temporaryStations),temporaryIds=new Set(temporaryStations.map(station=>station.id));return {...task,reason:reason||'UNKNOWN',...(reason?{}:{reasonRaw:item.reason||reasonRaw||''}),temporaryStations,stationIds:(task.stationIds||[]).filter(id=>OUTPLAN_STATION_IDS.has(id)||temporaryIds.has(id)),logs:[...(task.logs||[])]};}).filter(item=>item.stationIds.length);}
 function outPlanLoad(){try{const saved=JSON.parse(localStorage.getItem(OUTPLAN_KEY)||'null');return outPlanNormalizeTasks(Array.isArray(saved)?saved:OUTPLAN_SEED);}catch(e){return outPlanNormalizeTasks(OUTPLAN_SEED);}}
 function outPlanSave(tasks){localStorage.setItem(OUTPLAN_KEY,JSON.stringify(outPlanNormalizeTasks(tasks)));}
 function outPlanNow(){const d=new Date(),p=v=>String(v).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;}
-function outPlanStation(id){return OUTPLAN_STATIONS.find(item=>item.id===id);}
+function outPlanStation(id,task){return OUTPLAN_STATIONS.find(item=>item.id===id)||(task?.temporaryStations||[]).find(item=>item.id===id);}
 function outPlanReason(task){return OUTPLAN_REASONS[outPlanNormalizeReason(task.reason)]||'未知原因';}
 function outPlanConflict(stationId,start,end,ignoreId){return outPlanLoad().find(task=>task.id!==ignoreId&&!['已完成','已作废'].includes(task.status)&&task.stationIds.includes(stationId)&&start<task.end&&end>task.start);}
 function outPlanTag(status){const map={'未下发':'gray','待分配':'orange','进行中':'blue','普查中':'blue','所长审核':'orange','管理部审核':'orange','已完成':'green','普查完成':'green','已作废':'red'};return `<span class="tag tag-${map[status]||'gray'}">${status}</span>`;}
